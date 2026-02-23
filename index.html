@@ -20,9 +20,10 @@
           <hr>
           <button data-action="save-bpe"   data-i18n="m.save">Save (.bpe)</button>
           <hr>
-          <button data-action="export-png" data-i18n="m.epng">Export as PNG</button>
-          <button data-action="export-gif" data-i18n="m.egif">Export as GIF</button>
-          <button data-action="export-bpe" data-i18n="m.ebpe">Export as BPE</button>
+          <button data-action="export-png"         data-i18n="m.epng">Export as PNG</button>
+          <button data-action="export-gif"         data-i18n="m.egif">Export as GIF</button>
+          <button data-action="export-spritesheet" data-i18n="m.ess">Export as Sprite Sheet</button>
+          <button data-action="export-bpe"         data-i18n="m.ebpe">Export as BPE</button>
         </div>
       </div>
       <div class="menu-item">
@@ -58,6 +59,10 @@
     <input type="file" id="file-input" accept=".bpe" style="display:none">
     <input type="file" id="img-palette-input" accept="image/*" style="display:none">
   </header>
+
+  <div id="tab-bar">
+    <button id="btn-new-tab" title="New Tab">+</button>
+  </div>
 
   <div id="workspace">
 
@@ -236,6 +241,15 @@
         </div>
       </div>
 
+      <!-- About -->
+      <div id="about-section">
+        <div id="about-content">
+          <div class="about-title">BaconPixelEditor</div>
+          <div class="about-ver">Ver 1.0.0</div>
+          <div class="about-copy">©2026 iroiro</div>
+        </div>
+      </div>
+
     </aside>
   </div>
 
@@ -288,6 +302,29 @@
     <div class="modal-buttons">
       <button id="save-modal-ok"     data-i18n="save.ok">Save</button>
       <button id="save-modal-cancel" data-i18n="modal.cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal-overlay" class="hidden">
+  <div id="export-modal-box">
+    <h2 data-i18n="exp.title">Export</h2>
+    <div id="export-modal-content">
+      <label>
+        <span data-i18n="exp.scale">Scale</span>
+        <select id="export-scale-select">
+          <option value="1">1×</option>
+          <option value="2" selected>2×</option>
+          <option value="4">4×</option>
+          <option value="8">8×</option>
+          <option value="16">16×</option>
+        </select>
+      </label>
+    </div>
+    <div class="modal-buttons">
+      <button id="export-modal-ok"     data-i18n="exp.ok">Export</button>
+      <button id="export-modal-cancel" data-i18n="modal.cancel">Cancel</button>
     </div>
   </div>
 </div>

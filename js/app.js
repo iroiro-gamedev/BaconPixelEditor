@@ -12,7 +12,7 @@ const I18N = {
   en: {
     'm.file':'File','m.edit':'Edit','m.view':'View',
     'm.new':'New...','m.open':'Open (.bpe)...','m.save':'Save (.bpe)',
-    'm.epng':'Export as PNG','m.egif':'Export as GIF (animated)','m.ebpe':'Export as BPE',
+    'm.epng':'Export as PNG','m.egif':'Export as GIF (animated)','m.ess':'Export as Sprite Sheet','m.ebpe':'Export as BPE',
     'm.undo':'Undo (Ctrl+Z)','m.redo':'Redo (Ctrl+Y)',
     'm.selAll':'Select All (Ctrl+A)','m.desel':'Deselect (Esc)',
     'm.delSel':'Delete Selection (Del)','m.clear':'Clear Layer',
@@ -31,6 +31,7 @@ const I18N = {
     'modal.title':'New Project','modal.w':'Width (px)','modal.h':'Height (px)',
     'modal.ok':'OK','modal.cancel':'Cancel',
     'save.title':'Save As','save.fname':'File name','save.ok':'Save',
+    'exp.title':'Export','exp.scale':'Scale','exp.ok':'Export',
     'tool.select':'Select','tool.pencil':'Pencil','tool.eraser':'Eraser',
     'tool.fill':'Fill','tool.eyedropper':'Eyedropper',
     'tool.line':'Line','tool.rect':'Rectangle','tool.ellipse':'Ellipse',
@@ -40,7 +41,7 @@ const I18N = {
   ja: {
     'm.file':'ファイル','m.edit':'編集','m.view':'表示',
     'm.new':'新規作成...','m.open':'開く (.bpe)...','m.save':'保存 (.bpe)',
-    'm.epng':'PNG として書き出し','m.egif':'GIF として書き出し (アニメーション)','m.ebpe':'BPE として書き出し',
+    'm.epng':'PNG として書き出し','m.egif':'GIF として書き出し (アニメーション)','m.ess':'スプライトシートとして書き出し','m.ebpe':'BPE として書き出し',
     'm.undo':'元に戻す (Ctrl+Z)','m.redo':'やり直す (Ctrl+Y)',
     'm.selAll':'全選択 (Ctrl+A)','m.desel':'選択解除 (Esc)',
     'm.delSel':'選択範囲を削除 (Del)','m.clear':'レイヤーをクリア',
@@ -59,6 +60,7 @@ const I18N = {
     'modal.title':'新規作成','modal.w':'幅 (px)','modal.h':'高さ (px)',
     'modal.ok':'OK','modal.cancel':'キャンセル',
     'save.title':'名前を付けて保存','save.fname':'ファイル名','save.ok':'保存',
+    'exp.title':'書き出し','exp.scale':'倍率','exp.ok':'書き出し',
     'tool.select':'選択','tool.pencil':'ペン','tool.eraser':'消しゴム',
     'tool.fill':'塗りつぶし','tool.eyedropper':'スポイト',
     'tool.line':'直線','tool.rect':'四角形','tool.ellipse':'楕円',
@@ -135,10 +137,11 @@ class BaconPixelEditor {
     this.drawing=false; this.panning=false; this.spaceDown=false;
     this.startPx=null; this.lastPx=null; this.panStart=null; this.overlayPxMap=null;
 
-    // Selection / float
+    // Selection / float / rotation
     this.selection=null; this.selDragging=false;
     this.floatBuf=null; this.floatDrag=null;
     this._marchOffset=0; this._marchAnimId=null;
+    this.rotDrag=null; this._overRotHandle=false;
 
     // Clipboard
     this._copyBuf=null;
@@ -158,8 +161,14 @@ class BaconPixelEditor {
     // Layer drag state
     this._layerDragSrc=null; this._layerDragDst=null;
 
-    // Pending save
+    // Pending save / export
     this._pendingSaveBlob=null;
+    this._pendingExport=null;
+
+    // Tabs
+    this.tabs=[];
+    this.activeTabId=0;
+    this._nextTabId=1;
 
     // Preview zoom
     this.previewZoom=2;
@@ -190,6 +199,10 @@ class BaconPixelEditor {
     this._syncColorUI();
     this._updateStatus(null,null);
     this._applyI18n();
+    // Initialize first tab
+    this.tabs=[{id:0, label:'Untitled', state:this._serializeTab()}];
+    this.activeTabId=0; this._nextTabId=1;
+    this._renderTabBar();
   }
 
   // ==========================================================
@@ -234,7 +247,7 @@ class BaconPixelEditor {
     this.layers=[{name:this.lang==='ja'?'レイヤー 1':'Layer 1',visible:true}];
     this.pixels=[[this._newPixels()]];
     this.undoStack=[]; this.redoStack=[];
-    this.selection=null; this.floatBuf=null;
+    this.selection=null; this.floatBuf=null; this.rotDrag=null;
     this._thumbCanvas.clear();
     if(resetPalette){this.palette=DEFAULT_PALETTE.slice();this.fgIdx=1;this.bgIdx=0;}
     this.fps=12;
@@ -479,18 +492,23 @@ class BaconPixelEditor {
 
   // --- Selection operations ---
   _deleteSelection(){
-    if(!this.selection&&!this.floatBuf)return;
     this._saveUndo();
     if(this.floatBuf){this.floatBuf=null;}
-    else{
+    else if(this.selection){
       const{x1,y1,x2,y2}=this.selection;
       for(let py=y1;py<=y2;py++)for(let px=x1;px<=x2;px++)if(this._inBounds(px,py))this._setPixel(px,py,-1);
+    }else{
+      this.pixels[this.layerIdx][this.frameIdx].fill(-1);
+      this._thumbCanvas.clear();
+      this._render();this._renderLFTable();return;
     }
     this._render();
   }
   _deselect(){
     if(this.floatBuf)this._commitFloat();
-    this.selection=null;this._stopMarchingAnts();this._renderOverlay(-1,-1);
+    this.selection=null;this.rotDrag=null;this._overRotHandle=false;
+    this.viewport.classList.remove('cursor-rotate');
+    this._stopMarchingAnts();this._renderOverlay(-1,-1);
   }
   _selectAll(){
     this.selection={x1:0,y1:0,x2:this.canvasW-1,y2:this.canvasH-1};
@@ -635,6 +653,25 @@ class BaconPixelEditor {
     if(this.spaceDown||btn===1){e.preventDefault();this.panning=true;this.panStart={mx,my,ox:this.offsetX,oy:this.offsetY};this.viewport.style.cursor='grabbing';return;}
     const ci=btn===2?this.bgIdx:this.fgIdx;
     if(this.tool==='select'){
+      if(this.floatBuf&&this._overRotHandle){
+        // Start rotation drag (floatBuf already exists)
+        const fb=this.floatBuf;
+        const rotCX=this.offsetX+(fb.x+fb.w/2)*this.zoom;
+        const rotCY=this.offsetY+(fb.y+fb.h/2)*this.zoom;
+        this.rotDrag={startAngle:Math.atan2(my-rotCY,mx-rotCX),origData:this.floatBuf.data.slice(),origW:fb.w,origH:fb.h,cx:rotCX,cy:rotCY};
+        this.drawing=true;return;
+      }
+      if(!this.floatBuf&&this.selection&&this._overRotHandle){
+        // Lift selection then start rotation drag
+        this._liftFloat();
+        if(this.floatBuf){
+          const fb=this.floatBuf;
+          const rotCX=this.offsetX+(fb.x+fb.w/2)*this.zoom;
+          const rotCY=this.offsetY+(fb.y+fb.h/2)*this.zoom;
+          this.rotDrag={startAngle:Math.atan2(my-rotCY,mx-rotCX),origData:fb.data.slice(),origW:fb.w,origH:fb.h,cx:rotCX,cy:rotCY};
+          this.drawing=true;return;
+        }
+      }
       if(this.floatBuf){
         const fb=this.floatBuf;
         if(x>=fb.x&&x<fb.x+fb.w&&y>=fb.y&&y<fb.y+fb.h){
@@ -655,10 +692,30 @@ class BaconPixelEditor {
     const{mx,my}=this._vpPos(e);const{x,y}=this._screenToPixel(mx,my);
     this._updateStatus(x,y);
     if(this.panning){this.offsetX=this.panStart.ox+(mx-this.panStart.mx);this.offsetY=this.panStart.oy+(my-this.panStart.my);this._render();return;}
+    if(this.rotDrag){
+      const angle=Math.atan2(my-this.rotDrag.cy,mx-this.rotDrag.cx)-this.rotDrag.startAngle;
+      this.floatBuf.data=this._rotatePixels(this.rotDrag.origData,this.rotDrag.origW,this.rotDrag.origH,angle);
+      this._render();this._renderOverlay(x,y);return;
+    }
     if(this.tool==='select'){
-      if(this.floatBuf){const fb=this.floatBuf;this.viewport.style.cursor=(x>=fb.x&&x<fb.x+fb.w&&y>=fb.y&&y<fb.y+fb.h)?'move':'crosshair';}
-      else if(this.selection&&this._isInSel(x,y))this.viewport.style.cursor='move';
-      else this.viewport.style.cursor='crosshair';
+      if(this.floatBuf){
+        const fb=this.floatBuf;
+        const z=this.zoom,ox=this.offsetX,oy=this.offsetY;
+        const corners=[[ox+fb.x*z,oy+fb.y*z],[ox+(fb.x+fb.w)*z,oy+fb.y*z],[ox+fb.x*z,oy+(fb.y+fb.h)*z],[ox+(fb.x+fb.w)*z,oy+(fb.y+fb.h)*z]];
+        this._overRotHandle=corners.some(([cx,cy])=>Math.hypot(mx-cx,my-cy)<=12);
+        if(this._overRotHandle){this.viewport.classList.add('cursor-rotate');this.viewport.style.cursor='';}
+        else{this.viewport.classList.remove('cursor-rotate');this.viewport.style.cursor=(x>=fb.x&&x<fb.x+fb.w&&y>=fb.y&&y<fb.y+fb.h)?'move':'crosshair';}
+      }
+      else if(this.selection){
+        const{x1,y1,x2,y2}=this.selection;
+        const z=this.zoom,ox=this.offsetX,oy=this.offsetY;
+        const corners=[[ox+x1*z,oy+y1*z],[ox+(x2+1)*z,oy+y1*z],[ox+x1*z,oy+(y2+1)*z],[ox+(x2+1)*z,oy+(y2+1)*z]];
+        this._overRotHandle=corners.some(([cx,cy])=>Math.hypot(mx-cx,my-cy)<=12);
+        if(this._overRotHandle){this.viewport.classList.add('cursor-rotate');this.viewport.style.cursor='';}
+        else if(this._isInSel(x,y)){this.viewport.classList.remove('cursor-rotate');this.viewport.style.cursor='move';}
+        else{this.viewport.classList.remove('cursor-rotate');this.viewport.style.cursor='crosshair';}
+      }
+      else{this.viewport.classList.remove('cursor-rotate');this._overRotHandle=false;this.viewport.style.cursor='crosshair';}
     }
     if(!this.drawing){this._renderOverlay(x,y);return;}
     if(this.floatDrag){
@@ -673,6 +730,7 @@ class BaconPixelEditor {
 
   _onMouseUp(e) {
     if(this.panning){this.panning=false;this.viewport.style.cursor=this.spaceDown?'grab':'crosshair';return;}
+    if(this.rotDrag){this.rotDrag=null;this.drawing=false;this._render();return;}
     if(this.floatDrag){this.floatDrag=null;this.drawing=false;this._render();return;}
     if(this.drawing){
       const{mx,my}=this._vpPos(e);const{x,y}=this._screenToPixel(mx,my);
@@ -752,7 +810,14 @@ class BaconPixelEditor {
     window.addEventListener('keyup',e=>this._onKeyUp(e));
     window.addEventListener('resize',()=>{this._resizeCanvases();this._render();});
 
-    document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();this._handleAction(b.dataset.action);}));
+    document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));this._handleAction(b.dataset.action);}));
+    // Menu open/close
+    document.querySelectorAll('.menu-item').forEach(mi=>{
+      const btn=mi.querySelector('.menu-btn');
+      btn.addEventListener('click',e=>{e.stopPropagation();const wasOpen=mi.classList.contains('open');document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));if(!wasOpen)mi.classList.add('open');});
+      btn.addEventListener('mouseenter',()=>{if(document.querySelector('.menu-item.open')){document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open'));mi.classList.add('open');}});
+    });
+    document.addEventListener('click',()=>document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open')));
     document.querySelectorAll('.tool-btn').forEach(b=>b.addEventListener('click',()=>this._selectTool(b.dataset.tool)));
 
     document.getElementById('btn-zoom-in') .addEventListener('click',()=>this._zoom(1));
@@ -843,6 +908,14 @@ class BaconPixelEditor {
       if(e.key==='Enter'){e.preventDefault();document.getElementById('save-modal-ok').click();}
       if(e.key==='Escape'){e.preventDefault();this._hideSaveModal();}
     });
+
+    // Export modal
+    document.getElementById('export-modal-ok').addEventListener('click',()=>this._confirmExport());
+    document.getElementById('export-modal-cancel').addEventListener('click',()=>this._hideExportModal());
+    document.getElementById('export-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('export-modal-overlay'))this._hideExportModal();});
+
+    // New tab button
+    document.getElementById('btn-new-tab').addEventListener('click',()=>this._newTab());
 
     // Preview zoom buttons
     document.getElementById('btn-preview-zoom-in').addEventListener('click',()=>{
@@ -953,8 +1026,9 @@ class BaconPixelEditor {
       case 'new':this._showModal();break;
       case 'open':document.getElementById('file-input').click();break;
       case 'save-bpe':this._saveBPE();break;
-      case 'export-png':this._exportPNG();break;
-      case 'export-gif':this._exportGIF();break;
+      case 'export-png':this._openExportDialog('png');break;
+      case 'export-gif':this._openExportDialog('gif');break;
+      case 'export-spritesheet':this._exportSpriteSheet();break;
       case 'export-bpe':this._saveBPE();break;
       case 'undo':this._undo();break;
       case 'redo':this._redo();break;
@@ -1128,6 +1202,27 @@ class BaconPixelEditor {
     if(this.floatBuf){
       const fb=this.floatBuf;
       drawAnts({x1:fb.x,y1:fb.y,x2:fb.x+fb.w-1,y2:fb.y+fb.h-1},'#4d9de0','#222');
+      // Corner rotation handles (floatBuf)
+      const corners=[[fb.x,fb.y],[fb.x+fb.w,fb.y],[fb.x,fb.y+fb.h],[fb.x+fb.w,fb.y+fb.h]];
+      ctx.save();
+      for(const[px,py]of corners){
+        const sx=ox+px*z,sy=oy+py*z;
+        ctx.fillStyle='#4d9de0';ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.setLineDash([]);
+        ctx.fillRect(sx-4,sy-4,8,8);ctx.strokeRect(sx-4,sy-4,8,8);
+      }
+      ctx.restore();
+    }
+    if(this.selection&&!this.floatBuf){
+      // Corner rotation handles (plain selection)
+      const{x1,y1,x2,y2}=this.selection;
+      const corners=[[x1,y1],[x2+1,y1],[x1,y2+1],[x2+1,y2+1]];
+      ctx.save();
+      for(const[px,py]of corners){
+        const sx=ox+px*z,sy=oy+py*z;
+        ctx.fillStyle='#4d9de0';ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.setLineDash([]);
+        ctx.fillRect(sx-4,sy-4,8,8);ctx.strokeRect(sx-4,sy-4,8,8);
+      }
+      ctx.restore();
     }
     // New selection preview
     if(this.tool==='select'&&this.selDragging&&this.startPx&&this.selection){
@@ -1501,9 +1596,9 @@ class BaconPixelEditor {
   // ==========================================================
   //  Export — PNG
   // ==========================================================
-  _exportPNG() {
-    const oc=document.createElement('canvas');oc.width=this.canvasW;oc.height=this.canvasH;
-    const ctx=oc.getContext('2d');const img=ctx.createImageData(this.canvasW,this.canvasH);
+  _exportPNG(scale=1) {
+    const src=document.createElement('canvas');src.width=this.canvasW;src.height=this.canvasH;
+    const sctx=src.getContext('2d');const img=sctx.createImageData(this.canvasW,this.canvasH);
     const d=img.data;const comp=this._compositFrame(this.frameIdx);
     for(let i=0;i<comp.length;i++){
       const ci=comp[i],b=i*4;
@@ -1511,18 +1606,28 @@ class BaconPixelEditor {
       const c=parseHex(this.palette[ci]||'#00000000');
       d[b]=c.r;d[b+1]=c.g;d[b+2]=c.b;d[b+3]=c.a;
     }
-    ctx.putImageData(img,0,0);
+    sctx.putImageData(img,0,0);
+    if(scale===1){src.toBlob(blob=>this._saveWithDialog(blob,'pixel-art.png'));return;}
+    const oc=document.createElement('canvas');oc.width=this.canvasW*scale;oc.height=this.canvasH*scale;
+    const octx=oc.getContext('2d');octx.imageSmoothingEnabled=false;
+    octx.drawImage(src,0,0,oc.width,oc.height);
     oc.toBlob(blob=>this._saveWithDialog(blob,'pixel-art.png'));
   }
 
   // ==========================================================
   //  Export — GIF
   // ==========================================================
-  _exportGIF() {
+  _exportGIF(scale=1) {
     try{
-      const enc=new GIFEncoder(this.canvasW,this.canvasH);enc.setRepeat(0);
+      const enc=new GIFEncoder(this.canvasW*scale,this.canvasH*scale);enc.setRepeat(0);
       const delay=Math.round(1000/this.fps);
-      for(let fi=0;fi<this.frameCount;fi++)enc.addFrame(Array.from(this._compositFrame(fi)),this.palette,delay);
+      for(let fi=0;fi<this.frameCount;fi++){
+        const comp=this._compositFrame(fi);
+        if(scale===1){enc.addFrame(Array.from(comp),this.palette,delay);continue;}
+        const scaled=[];
+        for(let y=0;y<this.canvasH*scale;y++)for(let x=0;x<this.canvasW*scale;x++)scaled.push(comp[Math.floor(y/scale)*this.canvasW+Math.floor(x/scale)]);
+        enc.addFrame(scaled,this.palette,delay);
+      }
       this._saveWithDialog(new Blob([enc.encode()],{type:'image/gif'}),'pixel-art.gif');
     }catch(err){alert('GIF error: '+err.message);console.error(err);}
   }
@@ -1536,7 +1641,7 @@ class BaconPixelEditor {
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     this._saveWithDialog(blob,'pixel-art.bpe');
   }
-  _loadBPE(file){const r=new FileReader();r.onload=e=>{try{this._importBPE(JSON.parse(e.target.result));}catch(err){alert('Load error: '+err.message);}};r.readAsText(file);}
+  _loadBPE(file){const r=new FileReader();r.onload=e=>{try{this._importBPE(JSON.parse(e.target.result),file.name.replace(/\.bpe$/i,''));}catch(err){alert('Load error: '+err.message);}};r.readAsText(file);}
   _importPaletteFromImage(file){
     const reader=new FileReader();
     reader.onload=ev=>{
@@ -1577,32 +1682,203 @@ class BaconPixelEditor {
     };
     reader.readAsDataURL(file);
   }
-  _importBPE(data) {
+  _importBPE(data, label='Untitled') {
     if(!data.bpe)throw new Error('Not a BPE file');
-    this.canvasW=data.width||16;this.canvasH=data.height||16;
-    this.fps=data.fps||12;this.palette=data.palette||DEFAULT_PALETTE.slice();
-    this.frameCount=data.frameCount||1;
+    const cw=data.width||16,ch=data.height||16;
+    const fps=data.fps||12;
+    const palette=data.palette||DEFAULT_PALETTE.slice();
+    const frameCount=data.frameCount||1;
+    let layers,pixels;
     if(data.bpe==='1.0'&&data.frames){
-      this.layers=[{name:'Layer 1',visible:true}];
-      this.pixels=[(data.frames||[]).map(f=>{const a=new Int16Array(this.canvasW*this.canvasH);a.fill(-1);(f.pixels||f||[]).forEach((v,i)=>a[i]=v);return a;})];
-      this.frameCount=this.pixels[0].length;
+      layers=[{name:'Layer 1',visible:true}];
+      const tmp=(data.frames||[]).map(f=>{const a=new Int16Array(cw*ch);a.fill(-1);(f.pixels||f||[]).forEach((v,i)=>a[i]=v);return Array.from(a);});
+      pixels=[tmp];
     }else{
-      this.layers=[];this.pixels=[];
+      layers=[];pixels=[];
       (data.layers||[]).forEach(ld=>{
-        this.layers.push({name:ld.name||'Layer',visible:ld.visible!==false});
+        layers.push({name:ld.name||'Layer',visible:ld.visible!==false});
         const lf=[];
-        for(let fi=0;fi<this.frameCount;fi++){
-          const src=(ld.frames||[])[fi]||[];const a=new Int16Array(this.canvasW*this.canvasH);a.fill(-1);
-          src.forEach((v,i)=>{if(i<a.length)a[i]=v;});lf.push(a);
+        for(let fi=0;fi<frameCount;fi++){
+          const src=(ld.frames||[])[fi]||[];const a=new Int16Array(cw*ch);a.fill(-1);
+          src.forEach((v,i)=>{if(i<a.length)a[i]=v;});lf.push(Array.from(a));
         }
-        this.pixels.push(lf);
+        pixels.push(lf);
       });
-      if(!this.layers.length){this.layers=[{name:'Layer 1',visible:true}];this.pixels=[Array.from({length:this.frameCount},()=>this._newPixels())];}
+      if(!layers.length){layers=[{name:'Layer 1',visible:true}];pixels=[Array.from({length:frameCount},()=>Array.from(new Int16Array(cw*ch).fill(-1)))];}
     }
-    this.layerIdx=0;this.frameIdx=0;this.fgIdx=1;this.bgIdx=0;
-    this.selection=null;this.floatBuf=null;this.undoStack=[];this.redoStack=[];
-    this._thumbCanvas.clear();
-    this._afterStructureChange();
+    const state={canvasW:cw,canvasH:ch,frameCount,layerIdx:0,frameIdx:0,layers,pixels,palette,fgIdx:1,bgIdx:0,zoom:8,offsetX:0,offsetY:0,fps,showGrid:true,undoStack:[],redoStack:[]};
+    // Save current tab and open in new tab
+    const cur=this.tabs.find(t=>t.id===this.activeTabId);
+    if(cur)cur.state=this._serializeTab();
+    const id=this._nextTabId++;
+    this.tabs.push({id,label,state});
+    this.activeTabId=id;
+    this._restoreTab(state);
+    this._fitZoom();this._render();
+    this._renderTabBar();
+  }
+
+  // ==========================================================
+  //  Export dialog
+  // ==========================================================
+  _openExportDialog(type){
+    this._pendingExport=type;
+    document.getElementById('export-modal-overlay').classList.remove('hidden');
+  }
+  _hideExportModal(){
+    document.getElementById('export-modal-overlay').classList.add('hidden');
+    this._pendingExport=null;
+  }
+  _confirmExport(){
+    const scale=parseInt(document.getElementById('export-scale-select').value)||1;
+    const type=this._pendingExport;
+    this._hideExportModal();
+    if(type==='png')this._exportPNG(scale);
+    else if(type==='gif')this._exportGIF(scale);
+    else if(type==='spritesheet')this._exportSpriteSheet(scale);
+  }
+
+  // ==========================================================
+  //  Export — Sprite Sheet
+  // ==========================================================
+  _exportSpriteSheet(){
+    const w=this.canvasW*this.frameCount,h=this.canvasH;
+    const pixelData=new Int16Array(w*h).fill(-1);
+    for(let fi=0;fi<this.frameCount;fi++){
+      const comp=this._compositFrame(fi);
+      for(let py=0;py<h;py++) for(let px=0;px<this.canvasW;px++)
+        pixelData[py*w+(fi*this.canvasW+px)]=comp[py*this.canvasW+px];
+    }
+    const label=this.lang==='ja'?'スプライトシート':'sprite-sheet';
+    const state={
+      canvasW:w,canvasH:h,frameCount:1,layerIdx:0,frameIdx:0,
+      layers:[{name:this.lang==='ja'?'スプライトシート':'Sprite Sheet',visible:true}],
+      pixels:[[Array.from(pixelData)]],
+      palette:this.palette.slice(),fgIdx:this.fgIdx,bgIdx:this.bgIdx,
+      zoom:1,offsetX:0,offsetY:0,fps:this.fps,showGrid:false,
+      undoStack:[],redoStack:[]
+    };
+    this._newTab(state,label);
+    this._fitZoom();this._render();
+  }
+
+  // ==========================================================
+  //  Tab management
+  // ==========================================================
+  _serializeTab(){
+    return{
+      canvasW:this.canvasW,canvasH:this.canvasH,frameCount:this.frameCount,
+      layerIdx:this.layerIdx,frameIdx:this.frameIdx,
+      layers:this.layers.map(l=>({...l})),
+      pixels:this.pixels.map(lp=>lp.map(fp=>Array.from(fp))),
+      palette:this.palette.slice(),fgIdx:this.fgIdx,bgIdx:this.bgIdx,
+      zoom:this.zoom,offsetX:this.offsetX,offsetY:this.offsetY,
+      fps:this.fps,showGrid:this.showGrid,
+      undoStack:this.undoStack.map(e=>({li:e.li,fi:e.fi,data:Array.from(e.data)})),
+      redoStack:this.redoStack.map(e=>({li:e.li,fi:e.fi,data:Array.from(e.data)})),
+    };
+  }
+  _restoreTab(state){
+    this.canvasW=state.canvasW||16;this.canvasH=state.canvasH||16;
+    this.frameCount=state.frameCount||1;
+    this.layerIdx=state.layerIdx||0;this.frameIdx=state.frameIdx||0;
+    this.layers=state.layers.map(l=>({...l}));
+    this.pixels=state.pixels.map(lp=>lp.map(fp=>{const a=new Int16Array(fp.length);for(let i=0;i<fp.length;i++)a[i]=fp[i];return a;}));
+    this.palette=state.palette.slice();
+    this.fgIdx=state.fgIdx||1;this.bgIdx=state.bgIdx||0;
+    this.zoom=state.zoom||8;this.offsetX=state.offsetX||0;this.offsetY=state.offsetY||0;
+    this.fps=state.fps||12;this.showGrid=state.showGrid!==false;
+    this.undoStack=(state.undoStack||[]).map(e=>({li:e.li,fi:e.fi,data:new Int16Array(e.data)}));
+    this.redoStack=(state.redoStack||[]).map(e=>({li:e.li,fi:e.fi,data:new Int16Array(e.data)}));
+    this.drawing=false;this.panning=false;
+    this.selection=null;this.floatBuf=null;this.floatDrag=null;this.rotDrag=null;
+    this._thumbCanvas.clear();this._stopAnim();
+    document.getElementById('canvas-size-display').textContent=`${this.canvasW} × ${this.canvasH}`;
+    document.getElementById('fps-input').value=this.fps;
+    document.getElementById('btn-grid-toggle').classList.toggle('active',this.showGrid);
+    this._resizeCanvases();this._render();this._renderLFTable();this._renderPalette();
+    this._syncColorUI();this._updateStatus(null,null);this._applyI18n();
+  }
+  _serializeBlank(){
+    return{
+      canvasW:16,canvasH:16,frameCount:1,layerIdx:0,frameIdx:0,
+      layers:[{name:this.lang==='ja'?'レイヤー 1':'Layer 1',visible:true}],
+      pixels:[[Array.from(new Int16Array(256).fill(-1))]],
+      palette:DEFAULT_PALETTE.slice(),fgIdx:1,bgIdx:0,
+      zoom:8,offsetX:0,offsetY:0,fps:12,showGrid:true,undoStack:[],redoStack:[],
+    };
+  }
+  _newTab(state=null,label='Untitled'){
+    const cur=this.tabs.find(t=>t.id===this.activeTabId);
+    if(cur)cur.state=this._serializeTab();
+    const id=this._nextTabId++;
+    const isBlank=!state;
+    const s=state||this._serializeBlank();
+    this.tabs.push({id,label,state:s});
+    this.activeTabId=id;
+    this._restoreTab(s);
+    if(isBlank){this._fitZoom();this._render();}
+    this._renderTabBar();
+  }
+  _switchTab(id){
+    if(id===this.activeTabId)return;
+    const cur=this.tabs.find(t=>t.id===this.activeTabId);
+    if(cur)cur.state=this._serializeTab();
+    this.activeTabId=id;
+    const tab=this.tabs.find(t=>t.id===id);
+    if(tab)this._restoreTab(tab.state);
+    this._renderTabBar();
+  }
+  _closeTab(id){
+    if(this.tabs.length<=1){
+      // Last tab: reset to blank
+      this._newProject(16,16,true);this._afterStructureChange();
+      this.tabs[0].label='Untitled';this.tabs[0].state=this._serializeTab();
+      this._renderTabBar();return;
+    }
+    const idx=this.tabs.findIndex(t=>t.id===id);
+    this.tabs.splice(idx,1);
+    if(this.activeTabId===id){
+      const newTab=this.tabs[Math.min(idx,this.tabs.length-1)];
+      this.activeTabId=newTab.id;
+      this._restoreTab(newTab.state);
+    }
+    this._renderTabBar();
+  }
+  _renderTabBar(){
+    const bar=document.getElementById('tab-bar');
+    bar.querySelectorAll('.editor-tab').forEach(e=>e.remove());
+    const newBtn=document.getElementById('btn-new-tab');
+    for(const tab of this.tabs){
+      const el=document.createElement('div');
+      el.className='editor-tab'+(tab.id===this.activeTabId?' active':'');
+      const label=document.createElement('span');label.className='tab-label';label.textContent=tab.label;
+      const close=document.createElement('button');close.className='tab-close';close.textContent='×';
+      close.title='Close';
+      close.addEventListener('click',e=>{e.stopPropagation();this._closeTab(tab.id);});
+      el.appendChild(label);el.appendChild(close);
+      el.addEventListener('click',()=>this._switchTab(tab.id));
+      bar.insertBefore(el,newBtn);
+    }
+    // Scroll active tab into view
+    const active=bar.querySelector('.editor-tab.active');
+    if(active)active.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+
+  // ==========================================================
+  //  Rotation
+  // ==========================================================
+  _rotatePixels(src,w,h,angle){
+    const cx=w/2,cy=h/2;
+    const cos=Math.cos(-angle),sin=Math.sin(-angle);
+    const dst=new Int16Array(w*h).fill(-1);
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const dx=x-cx,dy=y-cy;
+      const sx=Math.round(cos*dx-sin*dy+cx);
+      const sy=Math.round(sin*dx+cos*dy+cy);
+      if(sx>=0&&sx<w&&sy>=0&&sy<h)dst[y*w+x]=src[sy*w+sx];
+    }
+    return dst;
   }
 
   _download(blob,filename){
