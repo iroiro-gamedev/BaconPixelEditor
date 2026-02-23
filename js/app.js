@@ -1,6 +1,7 @@
 /**
- * Bacon Pixel Editor — v3
+ * Bacon Pixel Editor — v4
  * Layers × Frames | Mirror | i18n | Drag-reorder | Instant thumbnails
+ * Copy/Paste | Right-panel resize | Layer rename on dblclick | Save dialog
  */
 'use strict';
 
@@ -15,6 +16,7 @@ const I18N = {
     'm.undo':'Undo (Ctrl+Z)','m.redo':'Redo (Ctrl+Y)',
     'm.selAll':'Select All (Ctrl+A)','m.desel':'Deselect (Esc)',
     'm.delSel':'Delete Selection (Del)','m.clear':'Clear Layer',
+    'm.copy':'Copy (Ctrl+C)','m.paste':'Paste (Ctrl+V)',
     'm.grid':'Toggle Grid (G)','m.zin':'Zoom In (+)',
     'm.zout':'Zoom Out (-)','m.zfit':'Fit to Screen (0)',
     'ui.opacity':'Opacity','ui.filled':'Filled',
@@ -28,10 +30,12 @@ const I18N = {
     'btn.fAdd':'+F','btn.fDup':'Dup','btn.fDel':'−F',
     'modal.title':'New Project','modal.w':'Width (px)','modal.h':'Height (px)',
     'modal.ok':'OK','modal.cancel':'Cancel',
+    'save.title':'Save As','save.fname':'File name','save.ok':'Save',
     'tool.select':'Select','tool.pencil':'Pencil','tool.eraser':'Eraser',
     'tool.fill':'Fill','tool.eyedropper':'Eyedropper',
     'tool.line':'Line','tool.rect':'Rectangle','tool.ellipse':'Ellipse',
     'st.layer':'Layer','st.frame':'Frame',
+    'lyr.rename':'Double-click to rename',
   },
   ja: {
     'm.file':'ファイル','m.edit':'編集','m.view':'表示',
@@ -40,6 +44,7 @@ const I18N = {
     'm.undo':'元に戻す (Ctrl+Z)','m.redo':'やり直す (Ctrl+Y)',
     'm.selAll':'全選択 (Ctrl+A)','m.desel':'選択解除 (Esc)',
     'm.delSel':'選択範囲を削除 (Del)','m.clear':'レイヤーをクリア',
+    'm.copy':'コピー (Ctrl+C)','m.paste':'ペースト (Ctrl+V)',
     'm.grid':'グリッド表示 (G)','m.zin':'ズームイン (+)',
     'm.zout':'ズームアウト (-)','m.zfit':'画面に合わせる (0)',
     'ui.opacity':'不透明度','ui.filled':'塗りつぶし',
@@ -53,10 +58,12 @@ const I18N = {
     'btn.fAdd':'+F','btn.fDup':'複製','btn.fDel':'−F',
     'modal.title':'新規作成','modal.w':'幅 (px)','modal.h':'高さ (px)',
     'modal.ok':'OK','modal.cancel':'キャンセル',
+    'save.title':'名前を付けて保存','save.fname':'ファイル名','save.ok':'保存',
     'tool.select':'選択','tool.pencil':'ペン','tool.eraser':'消しゴム',
     'tool.fill':'塗りつぶし','tool.eyedropper':'スポイト',
     'tool.line':'直線','tool.rect':'四角形','tool.ellipse':'楕円',
     'st.layer':'レイヤー','st.frame':'フレーム',
+    'lyr.rename':'ダブルクリックで名前を変更',
   }
 };
 
@@ -133,6 +140,9 @@ class BaconPixelEditor {
     this.floatBuf=null; this.floatDrag=null;
     this._marchOffset=0; this._marchAnimId=null;
 
+    // Clipboard
+    this._copyBuf=null;
+
     // Undo
     this.undoStack=[]; this.redoStack=[]; this.maxUndo=50;
 
@@ -147,6 +157,12 @@ class BaconPixelEditor {
 
     // Layer drag state
     this._layerDragSrc=null; this._layerDragDst=null;
+
+    // Pending save
+    this._pendingSaveBlob=null;
+
+    // Preview zoom
+    this.previewZoom=2;
 
     // DOM
     this.mainCanvas   =document.getElementById('main-canvas');
@@ -502,12 +518,38 @@ class BaconPixelEditor {
     this.floatBuf=null;this._render();
   }
 
+  // --- Copy / Paste ---
+  _copySelection() {
+    if(!this.selection&&!this.floatBuf)return;
+    if(this.floatBuf){
+      this._copyBuf={w:this.floatBuf.w,h:this.floatBuf.h,data:this.floatBuf.data.slice()};
+      return;
+    }
+    const{x1,y1,x2,y2}=this.selection;
+    const w=x2-x1+1,h=y2-y1+1;
+    const data=new Int16Array(w*h);
+    for(let py=0;py<h;py++)for(let px=0;px<w;px++)
+      data[py*w+px]=this._inBounds(x1+px,y1+py)?this._getPixel(x1+px,y1+py):-1;
+    this._copyBuf={w,h,data};
+  }
+
+  _pasteFromClipboard() {
+    if(!this._copyBuf)return;
+    if(this.floatBuf)this._commitFloat();
+    const cx=Math.max(0,Math.floor((this.canvasW-this._copyBuf.w)/2));
+    const cy=Math.max(0,Math.floor((this.canvasH-this._copyBuf.h)/2));
+    this.floatBuf={x:cx,y:cy,w:this._copyBuf.w,h:this._copyBuf.h,data:this._copyBuf.data.slice()};
+    this.selection=null;
+    this._selectTool('select');
+    this._startMarchingAnts();
+    this._render();
+  }
+
   // ==========================================================
   //  Shape computation
   // ==========================================================
   _computeShapePx(x0,y0,x1,y1,ci) {
     const map=new Map();
-    // Use mirror-aware set for shape tools too
     const set=(x,y)=>{
       const pts=[[x,y]];
       if(this.mirrorH)pts.push([this.canvasW-1-x,y]);
@@ -558,7 +600,6 @@ class BaconPixelEditor {
   //  Flood fill (with mirror)
   // ==========================================================
   _floodFill(sx,sy,ci) {
-    // Gather all start points (mirror)
     const starts=[[sx,sy]];
     if(this.mirrorH)starts.push([this.canvasW-1-sx,sy]);
     if(this.mirrorV)starts.push([sx,this.canvasH-1-sy]);
@@ -653,8 +694,11 @@ class BaconPixelEditor {
       if(e.key==='y'){e.preventDefault();this._redo();return;}
       if(e.key==='s'){e.preventDefault();this._saveBPE();return;}
       if(e.key==='a'){e.preventDefault();this._selectAll();return;}
+      if(e.key==='c'){e.preventDefault();this._copySelection();return;}
+      if(e.key==='v'){e.preventDefault();this._pasteFromClipboard();return;}
     }
     switch(e.key){
+      case 'Enter':e.preventDefault();this._toggleAnim();break;
       case ' ':e.preventDefault();this.spaceDown=true;this.viewport.style.cursor='grab';break;
       case 'Escape':this._deselect();break;
       case 'Delete':case 'Backspace':this._deleteSelection();break;
@@ -673,6 +717,22 @@ class BaconPixelEditor {
       case '+':case '=':this._zoom(1);break;
       case '-':case '_':this._zoom(-1);break;
       case '0':this._fitZoom();this._render();break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if(this.layerIdx<this.layers.length-1){this.layerIdx++;this._render();this._renderLFTable();this._updateStatus(null,null);}
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if(this.layerIdx>0){this.layerIdx--;this._render();this._renderLFTable();this._updateStatus(null,null);}
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        if(this.frameIdx>0){this.frameIdx--;this.selection=null;this.floatBuf=null;this._render();this._renderLFTable();this._updateStatus(null,null);}
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if(this.frameIdx<this.frameCount-1){this.frameIdx++;this.selection=null;this.floatBuf=null;this._render();this._renderLFTable();this._updateStatus(null,null);}
+        break;
     }
   }
   _onKeyUp(e){if(e.key===' '){this.spaceDown=false;this.viewport.style.cursor='crosshair';}}
@@ -718,6 +778,8 @@ class BaconPixelEditor {
     document.getElementById('swap-colors').addEventListener('click',()=>{[this.fgIdx,this.bgIdx]=[this.bgIdx,this.fgIdx];this._syncColorUI();this._renderPalette();});
     document.getElementById('reset-colors').addEventListener('click',()=>{this.fgIdx=1;this.bgIdx=0;this._syncColorUI();this._renderPalette();});
     document.getElementById('btn-add-color').addEventListener('click',()=>{this.palette.push('#888888ff');this.fgIdx=this.palette.length-1;this._renderPalette();this._syncColorUI();});
+    document.getElementById('btn-palette-from-img').addEventListener('click',()=>document.getElementById('img-palette-input').click());
+    document.getElementById('img-palette-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)this._importPaletteFromImage(f);e.target.value='';});
 
     document.getElementById('btn-layer-add').addEventListener('click',()=>this._addLayer());
     document.getElementById('btn-layer-dup').addEventListener('click',()=>this._addLayer(this.layerIdx));
@@ -735,14 +797,16 @@ class BaconPixelEditor {
 
     document.getElementById('opt-filled').addEventListener('change',e=>this.optFilled=e.target.checked);
 
-    // Mirror buttons
+    // Mirror buttons — toggle state AND re-render to show/hide guide lines immediately
     document.getElementById('btn-mirror-h').addEventListener('click',()=>{
       this.mirrorH=!this.mirrorH;
       document.getElementById('btn-mirror-h').classList.toggle('active',this.mirrorH);
+      this._render();
     });
     document.getElementById('btn-mirror-v').addEventListener('click',()=>{
       this.mirrorV=!this.mirrorV;
       document.getElementById('btn-mirror-v').classList.toggle('active',this.mirrorV);
+      this._render();
     });
 
     // Language toggle
@@ -758,6 +822,127 @@ class BaconPixelEditor {
     });
     document.getElementById('modal-cancel').addEventListener('click',()=>this._hideModal());
     document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))this._hideModal();});
+
+    // Save modal
+    document.getElementById('save-modal-cancel').addEventListener('click',()=>this._hideSaveModal());
+    document.getElementById('save-modal-ok').addEventListener('click',()=>{
+      const rawName=(document.getElementById('save-fname-input').value||'pixel-art').trim();
+      const ext=document.getElementById('save-ext-display').textContent||'';
+      const filename=rawName.endsWith(ext)?rawName:rawName+ext;
+      if(this._pendingSaveBlob){
+        this._download(this._pendingSaveBlob,filename);
+        this._pendingSaveBlob=null;
+      }
+      this._hideSaveModal();
+    });
+    document.getElementById('save-modal-overlay').addEventListener('click',e=>{
+      if(e.target===document.getElementById('save-modal-overlay'))this._hideSaveModal();
+    });
+    // Allow Enter key in save filename input
+    document.getElementById('save-fname-input').addEventListener('keydown',e=>{
+      if(e.key==='Enter'){e.preventDefault();document.getElementById('save-modal-ok').click();}
+      if(e.key==='Escape'){e.preventDefault();this._hideSaveModal();}
+    });
+
+    // Preview zoom buttons
+    document.getElementById('btn-preview-zoom-in').addEventListener('click',()=>{
+      this.previewZoom=Math.min(8,parseFloat((this.previewZoom*1.5).toFixed(1)));
+      this._renderPreview(this.animPlaying?this.animFrameIdx:this.frameIdx);
+    });
+    document.getElementById('btn-preview-zoom-out').addEventListener('click',()=>{
+      this.previewZoom=Math.max(0.5,parseFloat((this.previewZoom/1.5).toFixed(1)));
+      this._renderPreview(this.animPlaying?this.animFrameIdx:this.frameIdx);
+    });
+    document.getElementById('preview-canvas').addEventListener('wheel',e=>{
+      e.preventDefault();
+      const factor=e.deltaY<0?1.25:0.8;
+      this.previewZoom=Math.max(0.5,Math.min(8,parseFloat((this.previewZoom*factor).toFixed(2))));
+      this._renderPreview(this.animPlaying?this.animFrameIdx:this.frameIdx);
+    },{passive:false});
+
+    // Horizontal resizer (between canvas and layer panel)
+    const lfHR=document.getElementById('lf-h-resizer');
+    let lfHRState=null;
+    lfHR.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const startY=e.clientY;
+      const startH=document.getElementById('lf-section').offsetHeight;
+      lfHRState={startY,startH};
+      lfHR.classList.add('resizing');
+      document.body.style.cursor='row-resize';
+      const onMove=e=>{
+        if(!lfHRState)return;
+        const dy=lfHRState.startY-e.clientY;
+        const newH=Math.max(60,Math.min(500,lfHRState.startH+dy));
+        document.getElementById('lf-section').style.height=newH+'px';
+      };
+      const onUp=()=>{
+        lfHRState=null;
+        lfHR.classList.remove('resizing');
+        document.body.style.cursor='';
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+        this._resizeCanvases();this._render();
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+
+    // Vertical resizer (between palette and animation in right panel)
+    const rvR=document.getElementById('right-v-resizer');
+    let rvRState=null;
+    rvR.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const startY=e.clientY;
+      const startH=document.getElementById('palette-section').offsetHeight;
+      rvRState={startY,startH};
+      rvR.classList.add('resizing');
+      document.body.style.cursor='row-resize';
+      const onMove=e=>{
+        if(!rvRState)return;
+        const dy=e.clientY-rvRState.startY;
+        const newH=Math.max(80,Math.min(600,rvRState.startH+dy));
+        document.getElementById('palette-section').style.height=newH+'px';
+      };
+      const onUp=()=>{
+        rvRState=null;
+        rvR.classList.remove('resizing');
+        document.body.style.cursor='';
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+
+    // Right panel resize
+    const rr=document.getElementById('right-resizer');
+    let rrState=null;
+    rr.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const startX=e.clientX;
+      const startW=document.getElementById('right-panel').offsetWidth;
+      rrState={startX,startW};
+      rr.classList.add('resizing');
+      document.body.style.cursor='col-resize';
+      const onMove=e=>{
+        if(!rrState)return;
+        const dx=rrState.startX-e.clientX;
+        const newW=Math.max(180,Math.min(520,rrState.startW+dx));
+        document.documentElement.style.setProperty('--right-w',newW+'px');
+      };
+      const onUp=()=>{
+        rrState=null;
+        rr.classList.remove('resizing');
+        document.body.style.cursor='';
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+        this._resizeCanvases();
+        this._render();
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
   }
 
   // ==========================================================
@@ -776,6 +961,8 @@ class BaconPixelEditor {
       case 'select-all':this._selectAll();break;
       case 'deselect':this._deselect();break;
       case 'delete-selection':this._deleteSelection();break;
+      case 'copy-selection':this._copySelection();break;
+      case 'paste':this._pasteFromClipboard();break;
       case 'clear-frame':this._saveUndo();this.pixels[this.layerIdx][this.frameIdx].fill(-1);this._render();break;
       case 'toggle-grid':this.showGrid=!this.showGrid;document.getElementById('btn-grid-toggle').classList.toggle('active',this.showGrid);this._render();break;
       case 'zoom-in':this._zoom(1);break;
@@ -817,14 +1004,14 @@ class BaconPixelEditor {
   }
   _fitZoom(){
     const vw=this.viewport.clientWidth||600,vh=this.viewport.clientHeight||400,m=40;
-    const z=Math.max(1,Math.min(32,Math.min(Math.floor((vw-m)/this.canvasW),Math.floor((vh-m)/this.canvasH))));
+    const z=Math.max(1,Math.min(64,Math.min(Math.floor((vw-m)/this.canvasW),Math.floor((vh-m)/this.canvasH))));
     this.zoom=z;this.offsetX=Math.round((vw-this.canvasW*z)/2);this.offsetY=Math.round((vh-this.canvasH*z)/2);
     document.getElementById('zoom-display').textContent=`${z}x`;
     document.getElementById('st-zoom').textContent=`${z}x`;
   }
   _zoom(dir){this._zoomAt(dir,this.viewport.clientWidth/2,this.viewport.clientHeight/2);}
   _zoomAt(dir,mx,my){
-    const L=[1,2,3,4,6,8,10,12,16,20,24,32];
+    const L=[1,2,3,4,6,8,10,12,16,20,24,32,48,64];
     let cur=L.indexOf(this.zoom);if(cur<0)cur=L.findIndex(z=>z>=this.zoom);
     const next=Math.max(0,Math.min(L.length-1,cur+dir)),nz=L[next];
     if(nz===this.zoom)return;
@@ -841,13 +1028,13 @@ class BaconPixelEditor {
     const ctx=this.mainCtx,w=this.mainCanvas.width,h=this.mainCanvas.height;
     const z=this.zoom,ox=this.offsetX,oy=this.offsetY,cw=this.canvasW,ch=this.canvasH;
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle='#1a1b2e';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#1e1e1e';ctx.fillRect(0,0,w,h);
 
     // Checkerboard
     for(let py=0;py<ch;py++)for(let px=0;px<cw;px++){
       const sx=ox+px*z,sy=oy+py*z;
       if(sx+z<0||sy+z<0||sx>=w||sy>=h)continue;
-      ctx.fillStyle=(px+py)%2===0?'#303045':'#242438';ctx.fillRect(sx,sy,z,z);
+      ctx.fillStyle=(px+py)%2===0?'#2a2a2a':'#222222';ctx.fillRect(sx,sy,z,z);
     }
 
     // Layers bottom→top
@@ -886,16 +1073,16 @@ class BaconPixelEditor {
       for(let py=0;py<=ch;py++){const sy=oy+py*z;if(sy<-1||sy>h+1)continue;ctx.beginPath();ctx.moveTo(ox,sy);ctx.lineTo(ox+cw*z,sy);ctx.stroke();}
     }
 
-    // Mirror axis guides
+    // Mirror axis guides — drawn whenever mirror is active
     if((this.mirrorH||this.mirrorV)&&z>=2){
-      ctx.save();ctx.strokeStyle='rgba(124,111,247,0.45)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.save();ctx.strokeStyle='rgba(77,157,224,0.55)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
       if(this.mirrorH){const sx=ox+cw*z/2;ctx.beginPath();ctx.moveTo(sx,oy);ctx.lineTo(sx,oy+ch*z);ctx.stroke();}
       if(this.mirrorV){const sy=oy+ch*z/2;ctx.beginPath();ctx.moveTo(ox,sy);ctx.lineTo(ox+cw*z,sy);ctx.stroke();}
       ctx.restore();
     }
 
     // Canvas border
-    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.strokeStyle='rgba(255,255,255,0.20)';ctx.lineWidth=1;ctx.setLineDash([]);
     ctx.strokeRect(ox-0.5,oy-0.5,cw*z+1,ch*z+1);
 
     // Instant thumb update (only current cell, no full table rebuild)
@@ -940,7 +1127,7 @@ class BaconPixelEditor {
     if(this.selection)drawAnts(this.selection,'#fff','#000');
     if(this.floatBuf){
       const fb=this.floatBuf;
-      drawAnts({x1:fb.x,y1:fb.y,x2:fb.x+fb.w-1,y2:fb.y+fb.h-1},'#7c6ff7','#222');
+      drawAnts({x1:fb.x,y1:fb.y,x2:fb.x+fb.w-1,y2:fb.y+fb.h-1},'#4d9de0','#222');
     }
     // New selection preview
     if(this.tool==='select'&&this.selDragging&&this.startPx&&this.selection){
@@ -960,7 +1147,6 @@ class BaconPixelEditor {
   // ==========================================================
   //  Thumbnail cache
   // ==========================================================
-  /** Fast update of a single cell thumbnail (called during drawing). */
   _updateThumb(li,fi) {
     const tc=this._thumbCanvas.get(`${li}_${fi}`);
     if(tc)this._renderLayerToThumb(tc.getContext('2d'),this.pixels[li][fi],tc.width,tc.height);
@@ -969,7 +1155,7 @@ class BaconPixelEditor {
   _renderLayerToThumb(ctx,layerPx,w,h) {
     const cw=this.canvasW,ch=this.canvasH,pw=w/cw,ph=h/ch;
     for(let py=0;py<ch;py++)for(let px=0;px<cw;px++){
-      ctx.fillStyle=(px+py)%2===0?'#303045':'#242438';ctx.fillRect(px*pw,py*ph,pw,ph);
+      ctx.fillStyle=(px+py)%2===0?'#2a2a2a':'#222222';ctx.fillRect(px*pw,py*ph,pw,ph);
     }
     for(let py=0;py<ch;py++)for(let px=0;px<cw;px++){
       const idx=layerPx[py*cw+px];if(idx<0)continue;
@@ -981,14 +1167,17 @@ class BaconPixelEditor {
   }
 
   _renderPreview(fi) {
-    const pc=this.previewCanvas,maxS=120;
-    const scale=Math.min(maxS/this.canvasW,maxS/this.canvasH);
+    const pc=this.previewCanvas;
+    const baseS=Math.max(20,Math.round(60*this.previewZoom));
+    const scale=Math.min(baseS/this.canvasW,baseS/this.canvasH);
     pc.width=Math.round(this.canvasW*scale);pc.height=Math.round(this.canvasH*scale);
     this._renderLayerToThumb(this.previewCtx,this._compositFrame(fi),pc.width,pc.height);
+    const zd=document.getElementById('preview-zoom-display');
+    if(zd)zd.textContent=`${this.previewZoom.toFixed(1)}x`;
   }
 
   // ==========================================================
-  //  Render — Layer/Frame table  (with drag handle)
+  //  Render — Layer/Frame table
   // ==========================================================
   _renderLFTable() {
     this._thumbCanvas.clear();
@@ -1033,6 +1222,7 @@ class BaconPixelEditor {
       const tr=document.createElement('tr');
       tr.className='lf-layer-row'+(li===this.layerIdx?' al':'');
       tr.dataset.di=di;
+      tr.dataset.li=li;
 
       // ---- Drag handle cell ----
       const handleCell=document.createElement('td');
@@ -1042,7 +1232,6 @@ class BaconPixelEditor {
       handle.innerHTML='⠿';
       handle.title=this.lang==='ja'?'ドラッグで並び替え':'Drag to reorder';
 
-      // HTML5 drag: only enable draggable when handle is pressed
       handle.addEventListener('mousedown',()=>{ tr.draggable=true; });
       window.addEventListener('mouseup',()=>{ tr.draggable=false; },{once:true});
 
@@ -1080,7 +1269,7 @@ class BaconPixelEditor {
       const nameTd=document.createElement('td');nameTd.className='lf-layer-name';
       const nameRow=document.createElement('div');nameRow.className='lf-name-row';
 
-      // Eye button (SVG, white)
+      // Eye button
       const visBtn=document.createElement('button');
       visBtn.className='vis-btn'+(layer.visible?'':' hidden-layer');
       visBtn.innerHTML=layer.visible
@@ -1093,23 +1282,27 @@ class BaconPixelEditor {
         this._render();this._renderLFTable();
       });
 
-      // Name input
-      const nameInput=document.createElement('input');
-      nameInput.className='layer-name-input';
-      nameInput.value=layer.name;
-      nameInput.title=this.lang==='ja'?'クリックで選択 / ダブルクリックで編集':'Click to select / Double-click to edit';
-      nameInput.addEventListener('mousedown',ev=>{
-        // Single click selects layer without entering edit mode
-        if(document.activeElement!==nameInput){
-          ev.preventDefault();
-          this.layerIdx=li;this._renderLFTable();
+      // Layer name — span for display, dblclick to edit
+      const nameText=document.createElement('span');
+      nameText.className='layer-name-text';
+      nameText.textContent=layer.name;
+      nameText.title=this._t('lyr.rename');
+
+      nameText.addEventListener('click',ev=>{
+        ev.stopPropagation();
+        if(this.layerIdx!==li){
+          this.layerIdx=li;
+          this._updateLayerActiveVisuals();
+          this._render();
+          this._updateStatus(null,null);
         }
       });
-      nameInput.addEventListener('dblclick',()=>{ nameInput.focus(); nameInput.select(); });
-      nameInput.addEventListener('blur',ev=>{this.layers[li].name=ev.target.value;});
-      nameInput.addEventListener('keydown',ev=>{if(ev.key==='Enter')nameInput.blur();});
+      nameText.addEventListener('dblclick',ev=>{
+        ev.stopPropagation();
+        this._startLayerNameEdit(li,nameText);
+      });
 
-      nameRow.appendChild(visBtn);nameRow.appendChild(nameInput);
+      nameRow.appendChild(visBtn);nameRow.appendChild(nameText);
       nameTd.appendChild(nameRow);tr.appendChild(nameTd);
 
       // ---- Frame cells ----
@@ -1119,11 +1312,13 @@ class BaconPixelEditor {
           +(fi===this.frameIdx?' af':'')
           +(li===this.layerIdx?' al':'')
           +(li===this.layerIdx&&fi===this.frameIdx?' active':'');
+        td.dataset.li=li;
+        td.dataset.fi=fi;
 
         const tc=document.createElement('canvas');
         tc.width=tc.height=36;
         this._renderLayerToThumb(tc.getContext('2d'),this.pixels[li][fi],36,36);
-        this._thumbCanvas.set(`${li}_${fi}`,tc); // store ref for instant updates
+        this._thumbCanvas.set(`${li}_${fi}`,tc);
 
         td.appendChild(tc);
         td.addEventListener('click',()=>this._selectCell(li,fi));
@@ -1133,6 +1328,50 @@ class BaconPixelEditor {
       tbody.appendChild(tr);
     }
     table.appendChild(tbody);
+  }
+
+  // ==========================================================
+  //  Layer name editing
+  // ==========================================================
+  _startLayerNameEdit(li, nameText) {
+    const input=document.createElement('input');
+    input.type='text';
+    input.className='layer-name-input';
+    input.value=this.layers[li].name;
+    if(nameText.parentNode)nameText.parentNode.replaceChild(input,nameText);
+    input.focus();
+    input.select();
+
+    const commit=()=>{
+      this.layers[li].name=input.value.trim()||this.layers[li].name;
+      nameText.textContent=this.layers[li].name;
+      if(input.parentNode)input.parentNode.replaceChild(nameText,input);
+    };
+    input.addEventListener('blur',commit);
+    input.addEventListener('keydown',e=>{
+      e.stopPropagation();
+      if(e.key==='Enter'){e.preventDefault();input.blur();}
+      if(e.key==='Escape'){input.value=this.layers[li].name;input.blur();}
+    });
+  }
+
+  // ==========================================================
+  //  Update layer active visuals without full table rebuild
+  // ==========================================================
+  _updateLayerActiveVisuals() {
+    const li=this.layerIdx,fi=this.frameIdx;
+    document.querySelectorAll('.lf-layer-row').forEach(r=>{
+      r.classList.toggle('al',parseInt(r.dataset.li)===li);
+    });
+    document.querySelectorAll('.lf-cell').forEach(c=>{
+      const cLi=parseInt(c.dataset.li),cFi=parseInt(c.dataset.fi);
+      c.classList.toggle('al',cLi===li);
+      c.classList.toggle('af',cFi===fi);
+      c.classList.toggle('active',cLi===li&&cFi===fi);
+    });
+    document.querySelectorAll('.lf-fh').forEach((fh,idx)=>{
+      fh.classList.toggle('af',idx===fi);
+    });
   }
 
   // ==========================================================
@@ -1213,10 +1452,51 @@ class BaconPixelEditor {
   }
 
   // ==========================================================
-  //  Modal
+  //  Modal (New Project)
   // ==========================================================
   _showModal(){document.getElementById('modal-overlay').classList.remove('hidden');}
   _hideModal(){document.getElementById('modal-overlay').classList.add('hidden');}
+
+  // ==========================================================
+  //  Save As dialog
+  // ==========================================================
+  async _saveWithDialog(blob, defaultName) {
+    if(window.showSaveFilePicker){
+      const ext='.'+defaultName.split('.').pop();
+      const mimeMap={'.png':'image/png','.gif':'image/gif','.bpe':'application/octet-stream'};
+      try{
+        const fh=await window.showSaveFilePicker({
+          suggestedName:defaultName,
+          types:[{description:'File',accept:{[mimeMap[ext]||'application/octet-stream']:[ext]}}]
+        });
+        const w=await fh.createWritable();
+        await w.write(blob);
+        await w.close();
+        return;
+      }catch(e){
+        if(e.name==='AbortError')return;
+        // Fall through to custom modal on other errors
+      }
+    }
+    // Fallback: custom filename modal
+    this._showSaveModal(blob,defaultName);
+  }
+
+  _showSaveModal(blob, defaultName) {
+    this._pendingSaveBlob=blob;
+    const parts=defaultName.split('.');
+    const ext=parts.length>1?'.'+parts.pop():'';
+    const name=parts.join('.');
+    document.getElementById('save-fname-input').value=name;
+    document.getElementById('save-ext-display').textContent=ext;
+    document.getElementById('save-modal-overlay').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('save-fname-input').select(),50);
+  }
+
+  _hideSaveModal() {
+    document.getElementById('save-modal-overlay').classList.add('hidden');
+    this._pendingSaveBlob=null;
+  }
 
   // ==========================================================
   //  Export — PNG
@@ -1231,7 +1511,8 @@ class BaconPixelEditor {
       const c=parseHex(this.palette[ci]||'#00000000');
       d[b]=c.r;d[b+1]=c.g;d[b+2]=c.b;d[b+3]=c.a;
     }
-    ctx.putImageData(img,0,0);oc.toBlob(blob=>this._download(blob,'pixel-art.png'));
+    ctx.putImageData(img,0,0);
+    oc.toBlob(blob=>this._saveWithDialog(blob,'pixel-art.png'));
   }
 
   // ==========================================================
@@ -1242,7 +1523,7 @@ class BaconPixelEditor {
       const enc=new GIFEncoder(this.canvasW,this.canvasH);enc.setRepeat(0);
       const delay=Math.round(1000/this.fps);
       for(let fi=0;fi<this.frameCount;fi++)enc.addFrame(Array.from(this._compositFrame(fi)),this.palette,delay);
-      this._download(new Blob([enc.encode()],{type:'image/gif'}),'pixel-art.gif');
+      this._saveWithDialog(new Blob([enc.encode()],{type:'image/gif'}),'pixel-art.gif');
     }catch(err){alert('GIF error: '+err.message);console.error(err);}
   }
 
@@ -1252,9 +1533,50 @@ class BaconPixelEditor {
   _saveBPE() {
     const data={bpe:'2.0',name:'untitled',width:this.canvasW,height:this.canvasH,fps:this.fps,palette:this.palette,frameCount:this.frameCount,
       layers:this.layers.map((layer,li)=>({name:layer.name,visible:layer.visible,frames:this.pixels[li].map(f=>Array.from(f))}))};
-    this._download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),'pixel-art.bpe');
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    this._saveWithDialog(blob,'pixel-art.bpe');
   }
   _loadBPE(file){const r=new FileReader();r.onload=e=>{try{this._importBPE(JSON.parse(e.target.result));}catch(err){alert('Load error: '+err.message);}};r.readAsText(file);}
+  _importPaletteFromImage(file){
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=128;
+        const scale=Math.min(1,MAX/Math.max(img.width,img.height));
+        const w=Math.max(1,Math.round(img.width*scale));
+        const h=Math.max(1,Math.round(img.height*scale));
+        const oc=document.createElement('canvas');
+        oc.width=w;oc.height=h;
+        const octx=oc.getContext('2d');
+        octx.drawImage(img,0,0,w,h);
+        const data=octx.getImageData(0,0,w,h).data;
+        const freq=new Map();
+        for(let i=0;i<data.length;i+=4){
+          if(data[i+3]<16)continue;
+          const r=Math.round(data[i]/16)*16;
+          const g=Math.round(data[i+1]/16)*16;
+          const b=Math.round(data[i+2]/16)*16;
+          const key=(r<<16)|(g<<8)|b;
+          freq.set(key,(freq.get(key)||0)+1);
+        }
+        const sorted=[...freq.entries()].sort((a,b)=>b[1]-a[1]).slice(0,64);
+        if(!sorted.length){alert('No colors found.');return;}
+        const msg=this.lang==='ja'
+          ?`画像から ${sorted.length} 色を読み込みます。\nパレットを置き換えますか？`
+          :`Import ${sorted.length} colors from image?\nThis will replace the current palette.`;
+        if(!confirm(msg))return;
+        this.palette=['#00000000',...sorted.map(([k])=>{
+          const r=(k>>16)&0xff,g=(k>>8)&0xff,b=k&0xff;
+          return toHex8(r,g,b,255);
+        })];
+        this.fgIdx=1;this.bgIdx=0;
+        this._syncColorUI();this._renderPalette();
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
   _importBPE(data) {
     if(!data.bpe)throw new Error('Not a BPE file');
     this.canvasW=data.width||16;this.canvasH=data.height||16;
