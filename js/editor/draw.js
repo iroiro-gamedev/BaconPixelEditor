@@ -19,12 +19,13 @@ export default {
     if(this.mirrorH&&this.mirrorV)pts.push([this.canvasW-1-x,this.canvasH-1-y]);
     for(const[px,py]of pts)if(this._inBounds(px,py))this._setPixel(px,py,ci);
   },
-  /** Paint a square brush centered at (x,y) with mirror support. */
+  /** Paint a circular brush centered at (x,y) with mirror support. */
   _paintBrush(x,y,ci) {
     const s=this.brushSize||1;
     if(s===1){this._setPixelM(x,y,ci);return;}
-    const lo=-Math.floor((s-1)/2),hi=lo+s-1;
-    for(let dy=lo;dy<=hi;dy++)for(let dx=lo;dx<=hi;dx++)this._setPixelM(x+dx,y+dy,ci);
+    const r=s/2,lo=-Math.ceil(r),hi=Math.ceil(r);
+    for(let dy=lo;dy<=hi;dy++)for(let dx=lo;dx<=hi;dx++)
+      if(Math.sqrt(dx*dx+dy*dy)<=r)this._setPixelM(x+dx,y+dy,ci);
   },
 
   _compositedColor(px,py,fi=this.frameIdx) {
