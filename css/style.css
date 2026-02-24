@@ -251,6 +251,8 @@ body {
 #zoom-display { min-width:34px; text-align:center; font-weight:700; color:var(--accent); font-size:12px; }
 .dim { color:var(--dim); font-size:11px; margin-left:auto; }
 .ctrl-label { font-size:11px; color:var(--dim); white-space:nowrap; }
+#brush-size-wrap { display:flex; align-items:center; gap:3px; margin-left:6px; }
+#brush-size-display { min-width:18px; text-align:center; font-weight:700; color:var(--accent); font-size:12px; }
 #fill-mode-wrap { display:flex; align-items:center; gap:4px; margin-left:6px; }
 #outline-corners-toggle.active { background:var(--accent2); border-color:var(--accent); }
 

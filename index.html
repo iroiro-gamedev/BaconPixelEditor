@@ -213,6 +213,12 @@
             <button id="btn-grid-toggle" class="active" data-i18n="ui.grid">Grid</button>
             <button id="btn-zoom-fit" data-i18n="ui.fit">Fit</button>
             <span id="canvas-size-display" class="dim">16 × 16</span>
+            <span id="brush-size-wrap" style="display:none">
+              <span class="ctrl-label">Size:</span>
+              <button id="btn-brush-minus">−</button>
+              <span id="brush-size-display">1</span>
+              <button id="btn-brush-plus">+</button>
+            </span>
             <span id="fill-mode-wrap" style="display:none">
               <span class="ctrl-label" data-i18n="ui.fillMode">Fill:</span>
               <button id="fill-mode-toggle" data-i18n="ui.fillContiguous"
@@ -441,8 +447,7 @@
     </div>
   </div>
 
-  <script src="js/gif-encoder.js"></script>
-  <script src="js/app.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

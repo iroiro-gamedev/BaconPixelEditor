@@ -219,3 +219,5 @@ class ByteWriter {
   writeStr(s)     { for (const c of s) this._data.push(c.charCodeAt(0)); }
   toUint8Array()  { return new Uint8Array(this._data); }
 }
+
+export default GIFEncoder;
