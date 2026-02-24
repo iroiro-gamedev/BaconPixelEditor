@@ -1118,6 +1118,7 @@ class BaconPixelEditor {
     document.getElementById('outline-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('outline-modal-overlay'))this._hideOutlineModal();});
 
     // Memo auto-save on input
+    document.getElementById('memo-textarea').addEventListener('input',()=>this._scheduleSave());
 
     // Mirror buttons — toggle state AND re-render to show/hide guide lines immediately
     document.getElementById('btn-mirror-h').addEventListener('click',()=>{
@@ -1274,6 +1275,33 @@ class BaconPixelEditor {
       document.addEventListener('mouseup',onUp);
     });
 
+    // Memo resizer (between animation and memo sections in right panel)
+    const memoR=document.getElementById('memo-resizer');
+    let memoRState=null;
+    memoR.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const startY=e.clientY;
+      const ta=document.getElementById('memo-textarea');
+      const startH=ta.offsetHeight;
+      memoRState={startY,startH};
+      memoR.classList.add('resizing');
+      document.body.style.cursor='row-resize';
+      const onMove=e=>{
+        if(!memoRState)return;
+        const dy=memoRState.startY-e.clientY;
+        const newH=Math.max(40,Math.min(400,memoRState.startH+dy));
+        ta.style.height=newH+'px';
+      };
+      const onUp=()=>{
+        memoRState=null;
+        memoR.classList.remove('resizing');
+        document.body.style.cursor='';
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
 
     // Right panel resize
     const rr=document.getElementById('right-resizer');
@@ -1968,6 +1996,7 @@ class BaconPixelEditor {
   // ==========================================================
   _saveBPE() {
     const data={bpe:'2.0',name:'untitled',width:this.canvasW,height:this.canvasH,fps:this.fps,palette:this.palette,frameCount:this.frameCount,
+      memo:document.getElementById('memo-textarea').value,
       layers:this.layers.map((layer,li)=>({name:layer.name,visible:layer.visible,frames:this.pixels[li].map(f=>Array.from(f))}))};
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     this._pendingSaveBPE=true;
@@ -2040,7 +2069,7 @@ class BaconPixelEditor {
       });
       if(!layers.length){layers=[{name:'Layer 1',visible:true}];pixels=[Array.from({length:frameCount},()=>Array.from(new Int16Array(cw*ch).fill(-1)))];}
     }
-    const state={canvasW:cw,canvasH:ch,frameCount,layerIdx:0,frameIdx:0,layers,pixels,palette,fgIdx:1,bgIdx:0,zoom:8,offsetX:0,offsetY:0,fps,showGrid:true,undoStack:[],redoStack:[]};
+    const state={canvasW:cw,canvasH:ch,frameCount,layerIdx:0,frameIdx:0,layers,pixels,palette,fgIdx:1,bgIdx:0,zoom:8,offsetX:0,offsetY:0,fps,showGrid:true,undoStack:[],redoStack:[],memo:data.memo||''};
     // Save current tab and open in new tab
     const cur=this.tabs.find(t=>t.id===this.activeTabId);
     if(cur)cur.state=this._serializeTab();
@@ -2110,6 +2139,7 @@ class BaconPixelEditor {
       fps:this.fps,showGrid:this.showGrid,
       undoStack:this.undoStack.map(e=>e.type==='structure'?{type:'structure',layers:e.layers.map(l=>({...l})),pixels:e.pixels.map(lp=>lp.map(fp=>Array.from(fp))),frameCount:e.frameCount,layerIdx:e.layerIdx,frameIdx:e.frameIdx}:{type:'pixels',li:e.li,fi:e.fi,data:Array.from(e.data)}),
       redoStack:this.redoStack.map(e=>e.type==='structure'?{type:'structure',layers:e.layers.map(l=>({...l})),pixels:e.pixels.map(lp=>lp.map(fp=>Array.from(fp))),frameCount:e.frameCount,layerIdx:e.layerIdx,frameIdx:e.frameIdx}:{type:'pixels',li:e.li,fi:e.fi,data:Array.from(e.data)}),
+      memo:document.getElementById('memo-textarea').value,
     };
   }
   _restoreTab(state){
@@ -2127,6 +2157,7 @@ class BaconPixelEditor {
     this.drawing=false;this.panning=false;
     this.selection=null;this.floatBuf=null;this.floatDrag=null;this.rotDrag=null;
     this._thumbCanvas.clear();this._stopAnim();
+    document.getElementById('memo-textarea').value=state.memo||'';
     document.getElementById('canvas-size-display').textContent=`${this.canvasW} × ${this.canvasH}`;
     document.getElementById('fps-input').value=this.fps;
     document.getElementById('btn-grid-toggle').classList.toggle('active',this.showGrid);
@@ -2139,7 +2170,7 @@ class BaconPixelEditor {
       layers:[{name:this._t('lyr.default')+' 1',visible:true}],
       pixels:[[Array.from(new Int16Array(256).fill(-1))]],
       palette:DEFAULT_PALETTE.slice(),fgIdx:1,bgIdx:0,
-      zoom:8,offsetX:0,offsetY:0,fps:12,showGrid:true,undoStack:[],redoStack:[],
+      zoom:8,offsetX:0,offsetY:0,fps:12,showGrid:true,undoStack:[],redoStack:[],memo:'',
     };
   }
   _newTab(state=null,label='Untitled'){

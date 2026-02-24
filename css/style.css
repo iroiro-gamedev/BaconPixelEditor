@@ -466,6 +466,17 @@ body {
 }
 #right-v-resizer:hover, #right-v-resizer.resizing { background: var(--accent); }
 
+/* ===== Memo resizer ===== */
+#memo-resizer {
+  height: 5px;
+  background: var(--border);
+  cursor: row-resize;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  z-index: 10;
+}
+#memo-resizer:hover, #memo-resizer.resizing { background: var(--accent); }
+
 /* ===== Animation ===== */
 #anim-section {
   flex: 1;
@@ -568,6 +579,29 @@ body {
   border-radius:4px; padding:3px 6px; font-size:12px; cursor:pointer;
 }
 #export-scale-select:focus { outline:none; border-color:var(--accent); }
+
+/* ===== Memo Panel ===== */
+#memo-section {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+#memo-wrap { padding: 4px 6px; }
+#memo-textarea {
+  width: 100%;
+  height: 80px;
+  resize: vertical;
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 4px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+#memo-textarea:focus { outline: none; border-color: var(--accent); }
 
 /* ===== Rotation cursor ===== */
 .cursor-rotate { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z' fill='white' stroke='black' stroke-width='0.5'/%3E%3C/svg%3E") 12 12, crosshair; }
