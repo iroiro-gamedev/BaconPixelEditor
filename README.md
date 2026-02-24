@@ -1,5 +1,7 @@
 # Bacon Pixel Editor
 
+https://iroiro-gamedev.github.io/BaconPixelEditor/
+
 A browser-based pixel art editor built with vanilla JavaScript. No installation required — just open `index.html` in a modern web browser.
 
 ---
@@ -123,4 +125,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## Author
 
 **iroiro**
-- [OFUSE](https://ofuse.me/o?uid=156126)
+- [X(Twitter)](https://x.com/iroiro_GameDev)
