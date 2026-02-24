@@ -98,6 +98,7 @@ class BaconPixelEditor {
   _init() {
     this._newProject(16,16,false);
     this._bindEvents();
+    this._selectTool(this.tool);
     this._resizeCanvases();
     this._fitZoom();
     this._render();
