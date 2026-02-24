@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,416 +9,431 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="image/BaconPixelEditor_icon.png">
 
+  <!--GoogleAdsense-->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6245026919381456"
+    crossorigin="anonymous"></script>
+
   <!-- OGP -->
-  <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://iroiro-gamedev.github.io/BaconPixelEditor/">
-  <meta property="og:title"       content="Bacon Pixel Editor">
-  <meta property="og:description" content="A browser-based pixel art editor. Multi-layer animation, palette tools, and PNG/GIF export — no installation required.">
-  <meta property="og:image"       content="https://iroiro-gamedev.github.io/BaconPixelEditor/image/BaconPixelEditor_OPGCard.png">
-  <meta property="og:image:width"  content="1200">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://iroiro-gamedev.github.io/BaconPixelEditor/">
+  <meta property="og:title" content="Bacon Pixel Editor">
+  <meta property="og:description"
+    content="A browser-based pixel art editor. Multi-layer animation, palette tools, and PNG/GIF export — no installation required.">
+  <meta property="og:image"
+    content="https://iroiro-gamedev.github.io/BaconPixelEditor/image/BaconPixelEditor_OPGCard.png">
+  <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="600">
-  <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="Bacon Pixel Editor">
-  <meta name="twitter:description" content="A browser-based pixel art editor. Multi-layer animation, palette tools, and PNG/GIF export — no installation required.">
-  <meta name="twitter:image"       content="https://iroiro-gamedev.github.io/BaconPixelEditor/image/BaconPixelEditor_OPGCard.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bacon Pixel Editor">
+  <meta name="twitter:description"
+    content="A browser-based pixel art editor. Multi-layer animation, palette tools, and PNG/GIF export — no installation required.">
+  <meta name="twitter:image"
+    content="https://iroiro-gamedev.github.io/BaconPixelEditor/image/BaconPixelEditor_OPGCard.png">
 
   <link rel="stylesheet" href="css/style.css">
-  <script>(function(){try{var t=localStorage.getItem('bpe_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}}());</script>
+  <script>(function () { try { var t = localStorage.getItem('bpe_theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) { } }());</script>
 </head>
+
 <body>
-<div id="app">
+  <div id="app">
 
-  <header id="header">
-    <span class="logo">Bacon Pixel Editor</span>
-    <nav id="menubar">
-      <div class="menu-item">
-        <span class="menu-btn" data-i18n="m.file">File</span>
-        <div class="menu-dropdown">
-          <button data-action="new"        data-i18n="m.new">New...</button>
-          <button data-action="open"       data-i18n="m.open">Open (.bpe)...</button>
-          <hr>
-          <button data-action="save-bpe"   data-i18n="m.save">Save (.bpe)</button>
-          <hr>
-          <button data-action="export-png"         data-i18n="m.epng">Export as PNG</button>
-          <button data-action="export-gif"         data-i18n="m.egif">Export as GIF</button>
-          <button data-action="export-spritesheet" data-i18n="m.ess">Export as Sprite Sheet</button>
-          <button data-action="export-bpe"         data-i18n="m.ebpe">Export as BPE</button>
-          <hr>
-          <button data-action="resize-canvas" data-i18n="m.resizeCanvas">Resize Canvas...</button>
-        </div>
-      </div>
-      <div class="menu-item">
-        <span class="menu-btn" data-i18n="m.edit">Edit</span>
-        <div class="menu-dropdown">
-          <button data-action="undo"             data-i18n="m.undo">Undo (Ctrl+Z)</button>
-          <button data-action="redo"             data-i18n="m.redo">Redo (Ctrl+Y)</button>
-          <hr>
-          <button data-action="select-all"       data-i18n="m.selAll">Select All (Ctrl+A)</button>
-          <button data-action="deselect"         data-i18n="m.desel">Deselect (Esc)</button>
-          <button data-action="delete-selection" data-i18n="m.delSel">Delete Selection (Del)</button>
-          <button data-action="copy-selection"   data-i18n="m.copy">Copy (Ctrl+C)</button>
-          <button data-action="paste"            data-i18n="m.paste">Paste (Ctrl+V)</button>
-          <hr>
-          <button data-action="clear-frame"      data-i18n="m.clear">Clear Layer</button>
-          <hr>
-          <button data-action="rotate-cw90"   data-i18n="m.rotateCW">Rotate 90° CW</button>
-          <button data-action="rotate-ccw90"  data-i18n="m.rotateCCW">Rotate 90° CCW</button>
-          <button data-action="rotate-180"    data-i18n="m.rotate180">Rotate 180°</button>
-          <button data-action="flip-h-canvas" data-i18n="m.flipH">Flip Horizontal</button>
-          <button data-action="flip-v-canvas" data-i18n="m.flipV">Flip Vertical</button>
-          <hr>
-          <button data-action="add-outline"   data-i18n="m.addOutline">Add Outline</button>
-          <button data-action="add-antialias" data-i18n="m.antialias">Add Anti-alias</button>
-        </div>
-      </div>
-      <div class="menu-item">
-        <span class="menu-btn" data-i18n="m.view">View</span>
-        <div class="menu-dropdown">
-          <button data-action="toggle-grid" data-i18n="m.grid">Toggle Grid (G)</button>
-          <button data-action="zoom-in"     data-i18n="m.zin">Zoom In (+)</button>
-          <button data-action="zoom-out"    data-i18n="m.zout">Zoom Out (-)</button>
-          <button data-action="zoom-fit"    data-i18n="m.zfit">Fit to Screen (0)</button>
-        </div>
-      </div>
-    </nav>
-    <div id="header-right">
-      <button id="theme-toggle" title="Switch theme">Dark</button>
-      <button id="lang-toggle" title="Switch language / 言語切替">EN</button>
-      <a data-ofuse-widget-button href="https://ofuse.me/o?uid=156126" data-ofuse-id="156126" data-ofuse-size="small" data-ofuse-style="rectangle">OFUSEで応援を送る</a>
-      <script async src="https://ofuse.me/assets/platform/widget.js" charset="utf-8"></script>
-    </div>
-    <input type="file" id="file-input" accept=".bpe" style="display:none">
-    <input type="file" id="img-palette-input" accept="image/*" style="display:none">
-  </header>
-
-  <div id="tab-bar">
-    <button id="btn-new-tab" title="New Tab">+</button>
-  </div>
-
-  <div id="workspace">
-
-    <!-- Left: tool column -->
-    <aside id="left-panel">
-      <div id="tool-buttons">
-        <button class="tool-btn" data-tool="select"     title="Select (S)">
-          <svg viewBox="0 0 16 16"><path d="M2 2v10l3-3 2 5 2-1-2-5h4z" fill="currentColor"/></svg>
-        </button>
-        <div class="tool-sep"></div>
-        <button class="tool-btn active" data-tool="pencil"    title="Pencil (P)">
-          <svg viewBox="0 0 16 16"><path d="M12 2l2 2-9 9-3 1 1-3z" fill="currentColor"/></svg>
-        </button>
-        <button class="tool-btn" data-tool="eraser"    title="Eraser (E)">
-          <svg viewBox="0 0 16 16"><path d="M9 2l5 5-7 7H3l-1-4z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 14h10" stroke="currentColor" stroke-width="1.5"/></svg>
-        </button>
-        <button class="tool-btn" data-tool="fill"      title="Fill (F)">
-          <svg viewBox="0 0 16 16">
-            <path d="M2 5h10v2H2z" fill="currentColor"/>
-            <path d="M3 7h8v5H3z" fill="currentColor" opacity="0.8"/>
-            <path d="M5 5V3h4v2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-            <path d="M13 8c0 0 2 3 2 4.5S14.1 14 13 14s-2-1-2-2.5 2-4 2-4z" fill="currentColor"/>
-          </svg>
-        </button>
-        <button class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">
-          <svg viewBox="0 0 16 16"><path d="M11 2l3 3-1.5 1.5-1-1L7 10l-3 3-2-1 3-3 3.5-3.5-1-1z" fill="currentColor"/></svg>
-        </button>
-        <div class="tool-sep"></div>
-        <button class="tool-btn" data-tool="line"      title="Line (L)">
-          <svg viewBox="0 0 16 16"><line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" stroke-width="2"/></svg>
-        </button>
-        <button class="tool-btn" data-tool="rect"      title="Rectangle (R)">
-          <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-        </button>
-        <button class="tool-btn" data-tool="ellipse"   title="Ellipse (O)">
-          <svg viewBox="0 0 16 16"><ellipse cx="8" cy="8" rx="6" ry="5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-        </button>
-      </div>
-
-      <div class="tool-sep-h"></div>
-
-      <!-- Fg/Bg mini colors -->
-      <div id="mini-colors">
-        <div id="mini-bg" title="BG color (right-click)"></div>
-        <div id="mini-fg" title="FG color (left-click)"></div>
-      </div>
-      <!-- Swap/Reset buttons — separate row, no overlap -->
-      <div id="mini-btns">
-        <button id="swap-colors" title="Swap">⇄</button>
-        <button id="reset-colors" title="Reset">↺</button>
-      </div>
-
-      <label class="mini-label" data-i18n="ui.opacity">Opacity</label>
-      <input type="range" id="fg-alpha-input" min="0" max="255" value="255">
-
-      <div class="tool-sep-h"></div>
-
-      <label class="opt-label" id="opt-filled-label" style="display:none">
-        <input type="checkbox" id="opt-filled">
-        <span data-i18n="ui.filled">Filled</span>
-      </label>
-
-      <div class="tool-sep-h"></div>
-
-      <!-- Mirror toggles -->
-      <div id="mirror-group">
-        <button id="btn-mirror-h" class="mirror-btn" title="Mirror Horizontal">
-          <svg viewBox="0 0 16 16">
-            <line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2,2"/>
-            <path d="M1 8l5-4v8z" fill="currentColor"/>
-            <path d="M15 8l-5-4v8z" fill="currentColor" opacity="0.4"/>
-          </svg>
-          <span data-i18n="ui.mirH">H</span>
-        </button>
-        <button id="btn-mirror-v" class="mirror-btn" title="Mirror Vertical">
-          <svg viewBox="0 0 16 16">
-            <line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2,2"/>
-            <path d="M8 1l4 5H4z" fill="currentColor"/>
-            <path d="M8 15l4-5H4z" fill="currentColor" opacity="0.4"/>
-          </svg>
-          <span data-i18n="ui.mirV">V</span>
-        </button>
-      </div>
-    </aside>
-
-    <!-- Center column: Canvas (top) + Layer/Frame panel (bottom) -->
-    <div id="center-col">
-
-      <!-- Canvas -->
-      <main id="canvas-area">
-        <div id="canvas-controls">
-          <button id="btn-zoom-out">−</button>
-          <span id="zoom-display">8x</span>
-          <button id="btn-zoom-in">+</button>
-          <button id="btn-grid-toggle" class="active" data-i18n="ui.grid">Grid</button>
-          <button id="btn-zoom-fit" data-i18n="ui.fit">Fit</button>
-          <span id="canvas-size-display" class="dim">16 × 16</span>
-          <span id="fill-mode-wrap" style="display:none">
-            <span class="ctrl-label" data-i18n="ui.fillMode">Fill:</span>
-            <button id="fill-mode-toggle" data-i18n="ui.fillContiguous" title="Contiguous: flood fill / All: replace all same-color pixels">Contiguous</button>
-          </span>
-        </div>
-        <div id="canvas-viewport">
-          <canvas id="main-canvas" tabindex="0"></canvas>
-          <canvas id="overlay-canvas"></canvas>
-        </div>
-      </main>
-
-      <!-- Horizontal resizer between canvas and layer panel -->
-      <div id="lf-h-resizer"></div>
-
-      <!-- Layer / Frame panel -->
-      <div id="lf-section">
-        <div class="panel-title">
-          <span data-i18n="ui.lf">Layers / Frames</span>
-        </div>
-        <div id="lf-toolbar">
-          <div class="lf-group">
-            <button id="btn-layer-add" data-i18n="btn.lAdd">+L</button>
-            <button id="btn-layer-dup" data-i18n="btn.lDup">Dup</button>
-            <button id="btn-layer-del" data-i18n="btn.lDel">−L</button>
-            <button id="btn-layer-up"  data-i18n="btn.lUp">▲</button>
-            <button id="btn-layer-dn"  data-i18n="btn.lDn">▼</button>
-          </div>
-          <div class="lf-group">
-            <button id="btn-frame-add" data-i18n="btn.fAdd">+F</button>
-            <button id="btn-frame-dup" data-i18n="btn.fDup">Dup</button>
-            <button id="btn-frame-del" data-i18n="btn.fDel">−F</button>
+    <header id="header">
+      <span class="logo">Bacon Pixel Editor</span>
+      <nav id="menubar">
+        <div class="menu-item">
+          <span class="menu-btn" data-i18n="m.file">File</span>
+          <div class="menu-dropdown">
+            <button data-action="new" data-i18n="m.new">New...</button>
+            <button data-action="open" data-i18n="m.open">Open (.bpe)...</button>
+            <hr>
+            <button data-action="save-bpe" data-i18n="m.save">Save (.bpe)</button>
+            <hr>
+            <button data-action="export-png" data-i18n="m.epng">Export as PNG</button>
+            <button data-action="export-gif" data-i18n="m.egif">Export as GIF</button>
+            <button data-action="export-spritesheet" data-i18n="m.ess">Export as Sprite Sheet</button>
+            <button data-action="export-bpe" data-i18n="m.ebpe">Export as BPE</button>
+            <hr>
+            <button data-action="resize-canvas" data-i18n="m.resizeCanvas">Resize Canvas...</button>
           </div>
         </div>
-        <div id="lf-table-wrap">
-          <table id="lf-table"></table>
-        </div>
-      </div>
-
-    </div><!-- /center-col -->
-
-    <!-- Right panel resizer (horizontal) -->
-    <div id="right-resizer"></div>
-
-    <!-- Right panel -->
-    <aside id="right-panel">
-
-      <!-- Palette -->
-      <div id="palette-section">
-        <div class="panel-title">
-          <span data-i18n="ui.palette">Palette</span>
-          <div class="panel-title-btns">
-            <button id="btn-add-color" title="+">+</button>
-            <button id="btn-palette-from-img" title="Import palette from image">↑</button>
+        <div class="menu-item">
+          <span class="menu-btn" data-i18n="m.edit">Edit</span>
+          <div class="menu-dropdown">
+            <button data-action="undo" data-i18n="m.undo">Undo (Ctrl+Z)</button>
+            <button data-action="redo" data-i18n="m.redo">Redo (Ctrl+Y)</button>
+            <hr>
+            <button data-action="select-all" data-i18n="m.selAll">Select All (Ctrl+A)</button>
+            <button data-action="deselect" data-i18n="m.desel">Deselect (Esc)</button>
+            <button data-action="delete-selection" data-i18n="m.delSel">Delete Selection (Del)</button>
+            <button data-action="copy-selection" data-i18n="m.copy">Copy (Ctrl+C)</button>
+            <button data-action="paste" data-i18n="m.paste">Paste (Ctrl+V)</button>
+            <hr>
+            <button data-action="clear-frame" data-i18n="m.clear">Clear Layer</button>
+            <hr>
+            <button data-action="rotate-cw90" data-i18n="m.rotateCW">Rotate 90° CW</button>
+            <button data-action="rotate-ccw90" data-i18n="m.rotateCCW">Rotate 90° CCW</button>
+            <button data-action="rotate-180" data-i18n="m.rotate180">Rotate 180°</button>
+            <button data-action="flip-h-canvas" data-i18n="m.flipH">Flip Horizontal</button>
+            <button data-action="flip-v-canvas" data-i18n="m.flipV">Flip Vertical</button>
+            <hr>
+            <button data-action="add-outline" data-i18n="m.addOutline">Add Outline</button>
+            <button data-action="add-antialias" data-i18n="m.antialias">Add Anti-alias</button>
           </div>
         </div>
-        <div id="color-inputs">
-          <label><span data-i18n="ui.fg">FG</span> <input type="color" id="fg-color-input" value="#000000"></label>
-          <label><span data-i18n="ui.bg">BG</span> <input type="color" id="bg-color-input" value="#ffffff"></label>
+        <div class="menu-item">
+          <span class="menu-btn" data-i18n="m.view">View</span>
+          <div class="menu-dropdown">
+            <button data-action="toggle-grid" data-i18n="m.grid">Toggle Grid (G)</button>
+            <button data-action="zoom-in" data-i18n="m.zin">Zoom In (+)</button>
+            <button data-action="zoom-out" data-i18n="m.zout">Zoom Out (-)</button>
+            <button data-action="zoom-fit" data-i18n="m.zfit">Fit to Screen (0)</button>
+          </div>
         </div>
-        <div id="palette-grid"></div>
+      </nav>
+      <div id="header-right">
+        <button id="theme-toggle" title="Switch theme">Dark</button>
+        <button id="lang-toggle" title="Switch language / 言語切替">EN</button>
       </div>
+      <input type="file" id="file-input" accept=".bpe" style="display:none">
+      <input type="file" id="img-palette-input" accept="image/*" style="display:none">
+    </header>
 
-      <!-- Vertical resizer between palette and animation -->
-      <div id="right-v-resizer"></div>
+    <div id="tab-bar">
+      <button id="btn-new-tab" title="New Tab">+</button>
+    </div>
 
-      <!-- Animation -->
-      <div id="anim-section">
-        <div class="panel-title"><span data-i18n="ui.anim">Animation</span></div>
-        <div id="fps-row">
-          <label><span data-i18n="ui.fps">FPS</span>
-            <input type="number" id="fps-input" value="12" min="1" max="60">
-          </label>
-          <button id="btn-play">▶</button>
-          <button id="btn-stop">■</button>
+    <div id="workspace">
+
+      <!-- Left: tool column -->
+      <aside id="left-panel">
+        <div id="tool-buttons">
+          <button class="tool-btn" data-tool="select" title="Select (S)">
+            <svg viewBox="0 0 16 16">
+              <path d="M2 2v10l3-3 2 5 2-1-2-5h4z" fill="currentColor" />
+            </svg>
+          </button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn active" data-tool="pencil" title="Pencil (P)">
+            <svg viewBox="0 0 16 16">
+              <path d="M12 2l2 2-9 9-3 1 1-3z" fill="currentColor" />
+            </svg>
+          </button>
+          <button class="tool-btn" data-tool="eraser" title="Eraser (E)">
+            <svg viewBox="0 0 16 16">
+              <path d="M9 2l5 5-7 7H3l-1-4z" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <path d="M3 14h10" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+          </button>
+          <button class="tool-btn" data-tool="fill" title="Fill (F)">
+            <svg viewBox="0 0 16 16">
+              <path d="M2 5h10v2H2z" fill="currentColor" />
+              <path d="M3 7h8v5H3z" fill="currentColor" opacity="0.8" />
+              <path d="M5 5V3h4v2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              <path d="M13 8c0 0 2 3 2 4.5S14.1 14 13 14s-2-1-2-2.5 2-4 2-4z" fill="currentColor" />
+            </svg>
+          </button>
+          <button class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">
+            <svg viewBox="0 0 16 16">
+              <path d="M11 2l3 3-1.5 1.5-1-1L7 10l-3 3-2-1 3-3 3.5-3.5-1-1z" fill="currentColor" />
+            </svg>
+          </button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn" data-tool="line" title="Line (L)">
+            <svg viewBox="0 0 16 16">
+              <line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
+          <button class="tool-btn" data-tool="rect" title="Rectangle (R)">
+            <svg viewBox="0 0 16 16">
+              <rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
+          <button class="tool-btn" data-tool="ellipse" title="Ellipse (O)">
+            <svg viewBox="0 0 16 16">
+              <ellipse cx="8" cy="8" rx="6" ry="5" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
         </div>
-        <div id="preview-controls">
-          <button id="btn-preview-zoom-out" title="Zoom Out">−</button>
-          <span id="preview-zoom-display">2.0x</span>
-          <button id="btn-preview-zoom-in" title="Zoom In">+</button>
+
+        <div class="tool-sep-h"></div>
+
+        <!-- Fg/Bg mini colors -->
+        <div id="mini-colors">
+          <div id="mini-bg" title="BG color (right-click)"></div>
+          <div id="mini-fg" title="FG color (left-click)"></div>
         </div>
-        <div id="preview-wrap">
-          <canvas id="preview-canvas"></canvas>
+        <!-- Swap/Reset buttons — separate row, no overlap -->
+        <div id="mini-btns">
+          <button id="swap-colors" title="Swap">⇄</button>
+          <button id="reset-colors" title="Reset">↺</button>
+        </div>
+
+        <label class="mini-label" data-i18n="ui.opacity">Opacity</label>
+        <input type="range" id="fg-alpha-input" min="0" max="255" value="255">
+
+        <div class="tool-sep-h"></div>
+
+        <label class="opt-label" id="opt-filled-label" style="display:none">
+          <input type="checkbox" id="opt-filled">
+          <span data-i18n="ui.filled">Filled</span>
+        </label>
+
+        <div class="tool-sep-h"></div>
+
+        <!-- Mirror toggles -->
+        <div id="mirror-group">
+          <button id="btn-mirror-h" class="mirror-btn" title="Mirror Horizontal">
+            <svg viewBox="0 0 16 16">
+              <line x1="8" y1="1" x2="8" y2="15" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2,2" />
+              <path d="M1 8l5-4v8z" fill="currentColor" />
+              <path d="M15 8l-5-4v8z" fill="currentColor" opacity="0.4" />
+            </svg>
+            <span data-i18n="ui.mirH">H</span>
+          </button>
+          <button id="btn-mirror-v" class="mirror-btn" title="Mirror Vertical">
+            <svg viewBox="0 0 16 16">
+              <line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2,2" />
+              <path d="M8 1l4 5H4z" fill="currentColor" />
+              <path d="M8 15l4-5H4z" fill="currentColor" opacity="0.4" />
+            </svg>
+            <span data-i18n="ui.mirV">V</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Center column: Canvas (top) + Layer/Frame panel (bottom) -->
+      <div id="center-col">
+
+        <!-- Canvas -->
+        <main id="canvas-area">
+          <div id="canvas-controls">
+            <button id="btn-zoom-out">−</button>
+            <span id="zoom-display">8x</span>
+            <button id="btn-zoom-in">+</button>
+            <button id="btn-grid-toggle" class="active" data-i18n="ui.grid">Grid</button>
+            <button id="btn-zoom-fit" data-i18n="ui.fit">Fit</button>
+            <span id="canvas-size-display" class="dim">16 × 16</span>
+            <span id="fill-mode-wrap" style="display:none">
+              <span class="ctrl-label" data-i18n="ui.fillMode">Fill:</span>
+              <button id="fill-mode-toggle" data-i18n="ui.fillContiguous"
+                title="Contiguous: flood fill / All: replace all same-color pixels">Contiguous</button>
+            </span>
+          </div>
+          <div id="canvas-viewport">
+            <canvas id="main-canvas" tabindex="0"></canvas>
+            <canvas id="overlay-canvas"></canvas>
+          </div>
+        </main>
+
+        <!-- Horizontal resizer between canvas and layer panel -->
+        <div id="lf-h-resizer"></div>
+
+        <!-- Layer / Frame panel -->
+        <div id="lf-section">
+          <div class="panel-title">
+            <span data-i18n="ui.lf">Layers / Frames</span>
+          </div>
+          <div id="lf-toolbar">
+            <div class="lf-group">
+              <button id="btn-layer-add" data-i18n="btn.lAdd">+L</button>
+              <button id="btn-layer-dup" data-i18n="btn.lDup">Dup</button>
+              <button id="btn-layer-del" data-i18n="btn.lDel">−L</button>
+              <button id="btn-layer-up" data-i18n="btn.lUp">▲</button>
+              <button id="btn-layer-dn" data-i18n="btn.lDn">▼</button>
+            </div>
+            <div class="lf-group">
+              <button id="btn-frame-add" data-i18n="btn.fAdd">+F</button>
+              <button id="btn-frame-dup" data-i18n="btn.fDup">Dup</button>
+              <button id="btn-frame-del" data-i18n="btn.fDel">−F</button>
+            </div>
+          </div>
+          <div id="lf-table-wrap">
+            <table id="lf-table"></table>
+          </div>
+        </div>
+
+      </div><!-- /center-col -->
+
+      <!-- Right panel resizer (horizontal) -->
+      <div id="right-resizer"></div>
+
+      <!-- Right panel -->
+      <aside id="right-panel">
+
+        <!-- Palette -->
+        <div id="palette-section">
+          <div class="panel-title">
+            <span data-i18n="ui.palette">Palette</span>
+            <div class="panel-title-btns">
+              <button id="btn-add-color" title="+">+</button>
+              <button id="btn-palette-from-img" title="Import palette from image">↑</button>
+            </div>
+          </div>
+          <div id="color-inputs">
+            <label><span data-i18n="ui.fg">FG</span> <input type="color" id="fg-color-input" value="#000000"></label>
+            <label><span data-i18n="ui.bg">BG</span> <input type="color" id="bg-color-input" value="#ffffff"></label>
+          </div>
+          <div id="palette-grid"></div>
+        </div>
+
+        <!-- Vertical resizer between palette and animation -->
+        <div id="right-v-resizer"></div>
+
+        <!-- Animation -->
+        <div id="anim-section">
+          <div class="panel-title"><span data-i18n="ui.anim">Animation</span></div>
+          <div id="fps-row">
+            <label><span data-i18n="ui.fps">FPS</span>
+              <input type="number" id="fps-input" value="12" min="1" max="60">
+            </label>
+            <button id="btn-play">▶</button>
+            <button id="btn-stop">■</button>
+          </div>
+          <div id="preview-controls">
+            <button id="btn-preview-zoom-out" title="Zoom Out">−</button>
+            <span id="preview-zoom-display">2.0x</span>
+            <button id="btn-preview-zoom-in" title="Zoom In">+</button>
+          </div>
+          <div id="preview-wrap">
+            <canvas id="preview-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- About -->
+        <div id="about-section">
+          <div id="about-content">
+            <div class="about-title">BaconPixelEditor</div>
+            <div class="about-ver">Ver 0.1.0</div>
+            <div class="about-copy">©2026 iroiro</div>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+
+    <footer id="statusbar">
+      <span id="st-coords">x: — y: —</span>
+      <span id="st-color">—</span>
+      <span id="st-zoom">8x</span>
+      <span id="st-size">16×16</span>
+      <span id="st-lf">L1/1 F1/1</span>
+      <span id="st-tool">Pencil</span>
+    </footer>
+
+  </div>
+
+  <!-- New Project Modal -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal-box">
+      <h2 data-i18n="modal.title">New Project</h2>
+      <div id="modal-content">
+        <label><span data-i18n="modal.w">Width (px)</span>
+          <input type="number" id="new-width" value="16" min="1" max="512"></label>
+        <label><span data-i18n="modal.h">Height (px)</span>
+          <input type="number" id="new-height" value="16" min="1" max="512"></label>
+        <div class="modal-presets">
+          <button data-w="8" data-h="8">8×8</button>
+          <button data-w="16" data-h="16">16×16</button>
+          <button data-w="32" data-h="32">32×32</button>
+          <button data-w="48" data-h="48">48×48</button>
+          <button data-w="64" data-h="64">64×64</button>
         </div>
       </div>
-
-      <!-- Memo resizer -->
-      <div id="memo-resizer"></div>
-
-      <!-- Memo -->
-      <div id="memo-section">
-        <div class="panel-title">MEMO</div>
-        <div id="memo-wrap"><textarea id="memo-textarea" placeholder="..."></textarea></div>
+      <div class="modal-buttons">
+        <button id="modal-ok" data-i18n="modal.ok">OK</button>
+        <button id="modal-cancel" data-i18n="modal.cancel">Cancel</button>
       </div>
+    </div>
+  </div>
 
-      <!-- About -->
-      <div id="about-section">
-        <div id="about-content">
-          <div class="about-title">BaconPixelEditor</div>
-          <div class="about-ver">Ver 0.1.0</div>
-          <div class="about-copy">©2026 iroiro</div>
+  <!-- Save As Modal -->
+  <div id="save-modal-overlay" class="hidden">
+    <div id="save-modal-box">
+      <h2 data-i18n="save.title">Save As</h2>
+      <div id="save-modal-content">
+        <label>
+          <span data-i18n="save.fname">File name</span>
+          <input type="text" id="save-fname-input" value="pixel-art">
+          <span id="save-ext-display">.bpe</span>
+        </label>
+      </div>
+      <div class="modal-buttons">
+        <button id="save-modal-ok" data-i18n="save.ok">Save</button>
+        <button id="save-modal-cancel" data-i18n="modal.cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="export-modal-overlay" class="hidden">
+    <div id="export-modal-box">
+      <h2 data-i18n="exp.title">Export</h2>
+      <div id="export-modal-content">
+        <label>
+          <span data-i18n="exp.scale">Scale</span>
+          <select id="export-scale-select">
+            <option value="1">1×</option>
+            <option value="2" selected>2×</option>
+            <option value="4">4×</option>
+            <option value="8">8×</option>
+            <option value="16">16×</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-buttons">
+        <button id="export-modal-ok" data-i18n="exp.ok">Export</button>
+        <button id="export-modal-cancel" data-i18n="modal.cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Outline Modal -->
+  <div id="outline-modal-overlay" class="hidden">
+    <div id="outline-modal-box">
+      <h2 data-i18n="m.addOutline">Add Outline</h2>
+      <div id="outline-modal-content">
+        <label>
+          <input type="checkbox" id="outline-diag-check">
+          <span data-i18n="ui.outlineDiag">Fill corners (diagonal)</span>
+        </label>
+      </div>
+      <div class="modal-buttons">
+        <button id="outline-ok" data-i18n="modal.ok">OK</button>
+        <button id="outline-cancel" data-i18n="modal.cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resize Canvas Modal -->
+  <div id="resize-modal-overlay" class="hidden">
+    <div id="resize-modal-box">
+      <h2 data-i18n="modal.resize">Resize Canvas</h2>
+      <div id="resize-modal-content">
+        <div class="resize-size-row">
+          <label>W <input type="number" id="resize-w" min="1" max="512" value="16"></label>
+          <label>H <input type="number" id="resize-h" min="1" max="512" value="16"></label>
+        </div>
+        <div id="resize-anchor-grid">
+          <button class="resize-anchor-btn" data-ax="0" data-ay="0"></button>
+          <button class="resize-anchor-btn" data-ax="0.5" data-ay="0"></button>
+          <button class="resize-anchor-btn" data-ax="1" data-ay="0"></button>
+          <button class="resize-anchor-btn" data-ax="0" data-ay="0.5"></button>
+          <button class="resize-anchor-btn active" data-ax="0.5" data-ay="0.5"></button>
+          <button class="resize-anchor-btn" data-ax="1" data-ay="0.5"></button>
+          <button class="resize-anchor-btn" data-ax="0" data-ay="1"></button>
+          <button class="resize-anchor-btn" data-ax="0.5" data-ay="1"></button>
+          <button class="resize-anchor-btn" data-ax="1" data-ay="1"></button>
         </div>
       </div>
-
-    </aside>
-  </div>
-
-  <footer id="statusbar">
-    <span id="st-coords">x: —  y: —</span>
-    <span id="st-color">—</span>
-    <span id="st-zoom">8x</span>
-    <span id="st-size">16×16</span>
-    <span id="st-lf">L1/1  F1/1</span>
-    <span id="st-tool">Pencil</span>
-  </footer>
-
-</div>
-
-<!-- New Project Modal -->
-<div id="modal-overlay" class="hidden">
-  <div id="modal-box">
-    <h2 data-i18n="modal.title">New Project</h2>
-    <div id="modal-content">
-      <label><span data-i18n="modal.w">Width (px)</span>
-        <input type="number" id="new-width" value="16" min="1" max="512"></label>
-      <label><span data-i18n="modal.h">Height (px)</span>
-        <input type="number" id="new-height" value="16" min="1" max="512"></label>
-      <div class="modal-presets">
-        <button data-w="8"  data-h="8">8×8</button>
-        <button data-w="16" data-h="16">16×16</button>
-        <button data-w="32" data-h="32">32×32</button>
-        <button data-w="48" data-h="48">48×48</button>
-        <button data-w="64" data-h="64">64×64</button>
+      <div class="modal-buttons">
+        <button id="resize-ok" data-i18n="modal.resizeOk">Resize</button>
+        <button id="resize-cancel" data-i18n="modal.cancel">Cancel</button>
       </div>
     </div>
-    <div class="modal-buttons">
-      <button id="modal-ok"     data-i18n="modal.ok">OK</button>
-      <button id="modal-cancel" data-i18n="modal.cancel">Cancel</button>
-    </div>
   </div>
-</div>
 
-<!-- Save As Modal -->
-<div id="save-modal-overlay" class="hidden">
-  <div id="save-modal-box">
-    <h2 data-i18n="save.title">Save As</h2>
-    <div id="save-modal-content">
-      <label>
-        <span data-i18n="save.fname">File name</span>
-        <input type="text" id="save-fname-input" value="pixel-art">
-        <span id="save-ext-display">.bpe</span>
-      </label>
-    </div>
-    <div class="modal-buttons">
-      <button id="save-modal-ok"     data-i18n="save.ok">Save</button>
-      <button id="save-modal-cancel" data-i18n="modal.cancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Export Modal -->
-<div id="export-modal-overlay" class="hidden">
-  <div id="export-modal-box">
-    <h2 data-i18n="exp.title">Export</h2>
-    <div id="export-modal-content">
-      <label>
-        <span data-i18n="exp.scale">Scale</span>
-        <select id="export-scale-select">
-          <option value="1">1×</option>
-          <option value="2" selected>2×</option>
-          <option value="4">4×</option>
-          <option value="8">8×</option>
-          <option value="16">16×</option>
-        </select>
-      </label>
-    </div>
-    <div class="modal-buttons">
-      <button id="export-modal-ok"     data-i18n="exp.ok">Export</button>
-      <button id="export-modal-cancel" data-i18n="modal.cancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Add Outline Modal -->
-<div id="outline-modal-overlay" class="hidden">
-  <div id="outline-modal-box">
-    <h2 data-i18n="m.addOutline">Add Outline</h2>
-    <div id="outline-modal-content">
-      <label>
-        <input type="checkbox" id="outline-diag-check">
-        <span data-i18n="ui.outlineDiag">Fill corners (diagonal)</span>
-      </label>
-    </div>
-    <div class="modal-buttons">
-      <button id="outline-ok" data-i18n="modal.ok">OK</button>
-      <button id="outline-cancel" data-i18n="modal.cancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Resize Canvas Modal -->
-<div id="resize-modal-overlay" class="hidden">
-  <div id="resize-modal-box">
-    <h2 data-i18n="modal.resize">Resize Canvas</h2>
-    <div id="resize-modal-content">
-      <div class="resize-size-row">
-        <label>W <input type="number" id="resize-w" min="1" max="512" value="16"></label>
-        <label>H <input type="number" id="resize-h" min="1" max="512" value="16"></label>
-      </div>
-      <div id="resize-anchor-grid">
-        <button class="resize-anchor-btn" data-ax="0"   data-ay="0"></button>
-        <button class="resize-anchor-btn" data-ax="0.5" data-ay="0"></button>
-        <button class="resize-anchor-btn" data-ax="1"   data-ay="0"></button>
-        <button class="resize-anchor-btn" data-ax="0"   data-ay="0.5"></button>
-        <button class="resize-anchor-btn active" data-ax="0.5" data-ay="0.5"></button>
-        <button class="resize-anchor-btn" data-ax="1"   data-ay="0.5"></button>
-        <button class="resize-anchor-btn" data-ax="0"   data-ay="1"></button>
-        <button class="resize-anchor-btn" data-ax="0.5" data-ay="1"></button>
-        <button class="resize-anchor-btn" data-ax="1"   data-ay="1"></button>
-      </div>
-    </div>
-    <div class="modal-buttons">
-      <button id="resize-ok" data-i18n="modal.resizeOk">Resize</button>
-      <button id="resize-cancel" data-i18n="modal.cancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<script src="js/gif-encoder.js"></script>
-<script src="js/app.js"></script>
+  <script src="js/gif-encoder.js"></script>
+  <script src="js/app.js"></script>
 </body>
+
 </html>
