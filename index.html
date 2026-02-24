@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bacon Pixel Editor</title>
   <link rel="stylesheet" href="css/style.css">
+  <script>(function(){try{var t=localStorage.getItem('bpe_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}}());</script>
 </head>
 <body>
 <div id="app">
@@ -24,6 +25,8 @@
           <button data-action="export-gif"         data-i18n="m.egif">Export as GIF</button>
           <button data-action="export-spritesheet" data-i18n="m.ess">Export as Sprite Sheet</button>
           <button data-action="export-bpe"         data-i18n="m.ebpe">Export as BPE</button>
+          <hr>
+          <button data-action="resize-canvas" data-i18n="m.resizeCanvas">Resize Canvas...</button>
         </div>
       </div>
       <div class="menu-item">
@@ -39,6 +42,15 @@
           <button data-action="paste"            data-i18n="m.paste">Paste (Ctrl+V)</button>
           <hr>
           <button data-action="clear-frame"      data-i18n="m.clear">Clear Layer</button>
+          <hr>
+          <button data-action="rotate-cw90"   data-i18n="m.rotateCW">Rotate 90° CW</button>
+          <button data-action="rotate-ccw90"  data-i18n="m.rotateCCW">Rotate 90° CCW</button>
+          <button data-action="rotate-180"    data-i18n="m.rotate180">Rotate 180°</button>
+          <button data-action="flip-h-canvas" data-i18n="m.flipH">Flip Horizontal</button>
+          <button data-action="flip-v-canvas" data-i18n="m.flipV">Flip Vertical</button>
+          <hr>
+          <button data-action="add-outline"   data-i18n="m.addOutline">Add Outline</button>
+          <button data-action="add-antialias" data-i18n="m.antialias">Add Anti-alias</button>
         </div>
       </div>
       <div class="menu-item">
@@ -52,6 +64,7 @@
       </div>
     </nav>
     <div id="header-right">
+      <button id="theme-toggle" title="Switch theme">Dark</button>
       <button id="lang-toggle" title="Switch language / 言語切替">EN</button>
       <a data-ofuse-widget-button href="https://ofuse.me/o?uid=156126" data-ofuse-id="156126" data-ofuse-size="small" data-ofuse-style="rectangle">OFUSEで応援を送る</a>
       <script async src="https://ofuse.me/assets/platform/widget.js" charset="utf-8"></script>
@@ -160,6 +173,10 @@
           <button id="btn-grid-toggle" class="active" data-i18n="ui.grid">Grid</button>
           <button id="btn-zoom-fit" data-i18n="ui.fit">Fit</button>
           <span id="canvas-size-display" class="dim">16 × 16</span>
+          <span id="fill-mode-wrap" style="display:none">
+            <span class="ctrl-label" data-i18n="ui.fillMode">Fill:</span>
+            <button id="fill-mode-toggle" data-i18n="ui.fillContiguous" title="Contiguous: flood fill / All: replace all same-color pixels">Contiguous</button>
+          </span>
         </div>
         <div id="canvas-viewport">
           <canvas id="main-canvas" tabindex="0"></canvas>
@@ -241,11 +258,20 @@
         </div>
       </div>
 
+      <!-- Memo resizer -->
+      <div id="memo-resizer"></div>
+
+      <!-- Memo -->
+      <div id="memo-section">
+        <div class="panel-title">MEMO</div>
+        <div id="memo-wrap"><textarea id="memo-textarea" placeholder="..."></textarea></div>
+      </div>
+
       <!-- About -->
       <div id="about-section">
         <div id="about-content">
           <div class="about-title">BaconPixelEditor</div>
-          <div class="about-ver">Ver 1.0.0</div>
+          <div class="about-ver">Ver 0.1.0</div>
           <div class="about-copy">©2026 iroiro</div>
         </div>
       </div>
@@ -325,6 +351,51 @@
     <div class="modal-buttons">
       <button id="export-modal-ok"     data-i18n="exp.ok">Export</button>
       <button id="export-modal-cancel" data-i18n="modal.cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Outline Modal -->
+<div id="outline-modal-overlay" class="hidden">
+  <div id="outline-modal-box">
+    <h2 data-i18n="m.addOutline">Add Outline</h2>
+    <div id="outline-modal-content">
+      <label>
+        <input type="checkbox" id="outline-diag-check">
+        <span data-i18n="ui.outlineDiag">Fill corners (diagonal)</span>
+      </label>
+    </div>
+    <div class="modal-buttons">
+      <button id="outline-ok" data-i18n="modal.ok">OK</button>
+      <button id="outline-cancel" data-i18n="modal.cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resize Canvas Modal -->
+<div id="resize-modal-overlay" class="hidden">
+  <div id="resize-modal-box">
+    <h2 data-i18n="modal.resize">Resize Canvas</h2>
+    <div id="resize-modal-content">
+      <div class="resize-size-row">
+        <label>W <input type="number" id="resize-w" min="1" max="512" value="16"></label>
+        <label>H <input type="number" id="resize-h" min="1" max="512" value="16"></label>
+      </div>
+      <div id="resize-anchor-grid">
+        <button class="resize-anchor-btn" data-ax="0"   data-ay="0"></button>
+        <button class="resize-anchor-btn" data-ax="0.5" data-ay="0"></button>
+        <button class="resize-anchor-btn" data-ax="1"   data-ay="0"></button>
+        <button class="resize-anchor-btn" data-ax="0"   data-ay="0.5"></button>
+        <button class="resize-anchor-btn active" data-ax="0.5" data-ay="0.5"></button>
+        <button class="resize-anchor-btn" data-ax="1"   data-ay="0.5"></button>
+        <button class="resize-anchor-btn" data-ax="0"   data-ay="1"></button>
+        <button class="resize-anchor-btn" data-ax="0.5" data-ay="1"></button>
+        <button class="resize-anchor-btn" data-ax="1"   data-ay="1"></button>
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button id="resize-ok" data-i18n="modal.resizeOk">Resize</button>
+      <button id="resize-cancel" data-i18n="modal.cancel">Cancel</button>
     </div>
   </div>
 </div>
