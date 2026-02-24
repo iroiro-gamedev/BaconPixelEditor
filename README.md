@@ -57,7 +57,6 @@ Bacon Pixel Editor (BPE) is a lightweight, feature-rich pixel art tool that runs
 ### UI & Accessibility
 - **Themes:** Dark mode (default) and Light mode — preference saved in `localStorage`
 - **Languages:** English, Japanese (日本語), Simplified Chinese (简体中文)
-- Memo panel (per-tab free-text note, saved with project)
 - Resizable panels (right panel width, layer/frame panel height, memo height)
 - Auto-save to `localStorage` (2-second debounce after any edit)
 
