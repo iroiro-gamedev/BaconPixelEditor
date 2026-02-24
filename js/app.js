@@ -556,6 +556,12 @@ class BaconPixelEditor {
   //  Pixel access
   // ==========================================================
   _getPixel(x,y,li=this.layerIdx,fi=this.frameIdx){return this.pixels[li][fi][y*this.canvasW+x];}
+  // Returns true when a palette index is visually transparent (index=-1 OR palette alpha=0)
+  _isTransparentPx(idx){
+    if(idx<0)return true;
+    const h=this.palette[idx];
+    return !h||(h.length===9&&h.slice(7,9)==='00');
+  }
   _setPixel(x,y,ci,li=this.layerIdx,fi=this.frameIdx){this.pixels[li][fi][y*this.canvasW+x]=ci;}
   _inBounds(x,y){return x>=0&&y>=0&&x<this.canvasW&&y<this.canvasH;}
 
@@ -830,8 +836,10 @@ class BaconPixelEditor {
     const done=new Set();
     for(const[fx,fy]of starts){
       const key=`${fx},${fy}`;if(done.has(key))continue;done.add(key);
-      const target=this._getPixel(fx,fy);
-      if(target===ci)continue;
+      const rawTarget=this._getPixel(fx,fy);
+      const targetTransp=this._isTransparentPx(rawTarget);
+      if(!targetTransp&&rawTarget===ci)continue;
+      if(targetTransp&&this._isTransparentPx(ci))continue;
       const pix=this.pixels[this.layerIdx][this.frameIdx];
       const w=this.canvasW,h=this.canvasH;
       const stack=[[fx,fy]];
@@ -840,7 +848,8 @@ class BaconPixelEditor {
         const[x,y]=stack.pop();
         if(x<0||x>=w||y<0||y>=h)continue;
         const i=y*w+x;
-        if(seen[i]||pix[i]!==target)continue;
+        if(seen[i])continue;
+        if(targetTransp?!this._isTransparentPx(pix[i]):pix[i]!==rawTarget)continue;
         seen[i]=1;pix[i]=ci;
         stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
       }
@@ -848,10 +857,14 @@ class BaconPixelEditor {
   }
 
   _fillAll(x,y,ci){
-    const target=this._getPixel(x,y);
-    if(target===ci)return;
+    const rawTarget=this._getPixel(x,y);
+    const targetTransp=this._isTransparentPx(rawTarget);
+    if(!targetTransp&&rawTarget===ci)return;
+    if(targetTransp&&this._isTransparentPx(ci))return;
     const data=this.pixels[this.layerIdx][this.frameIdx];
-    for(let i=0;i<data.length;i++){if(data[i]===target)data[i]=ci;}
+    for(let i=0;i<data.length;i++){
+      if(targetTransp?this._isTransparentPx(data[i]):data[i]===rawTarget)data[i]=ci;
+    }
   }
 
   // ==========================================================
@@ -2321,11 +2334,11 @@ class BaconPixelEditor {
     const x1=this.selection?this.selection.x1:0,y1=this.selection?this.selection.y1:0;
     const x2=this.selection?this.selection.x2:w-1,y2=this.selection?this.selection.y2:h-1;
     for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++){
-      if(orig[y*w+x]>=0)continue;
+      if(!this._isTransparentPx(orig[y*w+x]))continue;
       const dirs=this.outlineCorners?[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]]:[[-1,0],[1,0],[0,-1],[0,1]];
       for(const[dx,dy]of dirs){
         const nx=x+dx,ny=y+dy;
-        if(nx>=0&&nx<w&&ny>=0&&ny<h&&orig[ny*w+nx]>=0){data[y*w+x]=this.fgIdx;break;}
+        if(nx>=0&&nx<w&&ny>=0&&ny<h&&!this._isTransparentPx(orig[ny*w+nx])){data[y*w+x]=this.fgIdx;break;}
       }
     }
     this._thumbCanvas.clear();this._render();this._renderLFTable();
@@ -2343,11 +2356,11 @@ class BaconPixelEditor {
     const x2=this.selection?this.selection.x2:w-1,y2=this.selection?this.selection.y2:h-1;
     const dirs=[[-1,0],[1,0],[0,-1],[0,1]];
     for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++){
-      if(orig[y*w+x]>=0)continue;
+      if(!this._isTransparentPx(orig[y*w+x]))continue;
       const nbrs=[];
       for(const[dx,dy]of dirs){
         const nx=x+dx,ny=y+dy;
-        if(nx>=0&&nx<w&&ny>=0&&ny<h&&orig[ny*w+nx]>=0)nbrs.push({dx,dy,ci:orig[ny*w+nx]});
+        if(nx>=0&&nx<w&&ny>=0&&ny<h&&!this._isTransparentPx(orig[ny*w+nx]))nbrs.push({dx,dy,ci:orig[ny*w+nx]});
       }
       let placed=false;
       for(let i=0;i<nbrs.length&&!placed;i++)for(let j=i+1;j<nbrs.length&&!placed;j++){
