@@ -93,6 +93,7 @@
           <span class="menu-btn" data-i18n="m.help">Help</span>
           <div class="menu-dropdown">
             <button data-action="tutorial"   data-i18n="m.tutorial">Tutorial</button>
+            <button data-action="terms"      data-i18n="m.terms">Terms of Service</button>
             <button data-action="privacy"    data-i18n="m.privacy">Privacy Policy</button>
             <button data-action="show-about" data-i18n="m.about">About</button>
           </div>
@@ -494,14 +495,114 @@
     </div>
   </div>
 
+  <!-- Terms of Service Modal -->
+  <div id="terms-modal-overlay" class="hidden">
+    <div id="terms-modal-box" class="help-modal-box">
+      <h2 data-i18n="help.termsTitle">Terms of Service</h2>
+      <div id="terms-content">
+        <div class="terms-lang-block" data-lang="ja">
+          <div class="terms-item">
+            <div class="terms-num">1</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsOwnershipTitle">作成コンテンツの権利</div>
+              <p data-i18n="help.termsOwnership">Bacon Pixel Editor で作成した画像・コンテンツの著作権はすべて作成者（ユーザー）に帰属します。当サービスはいかなる権利も主張しません。</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">2</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsUsageTitle">利用条件</div>
+              <p data-i18n="help.termsUsage">本サービスは個人・商用目的を問わず無償で利用できます。</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">3</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsDisclaimerTitle">免責事項</div>
+              <p data-i18n="help.termsDisclaimer">本サービスは現状のまま提供されます。利用によって生じたいかなる損害についても、運営者は責任を負いません。</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">4</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsChangeTitle">規約の変更</div>
+              <p data-i18n="help.termsChange">本規約は予告なく変更される場合があります。変更後も本サービスをご利用の場合は、変更後の規約に同意したものとみなします。</p>
+            </div>
+          </div>
+        </div>
+        <div class="terms-lang-block" data-lang="en">
+          <div class="terms-item">
+            <div class="terms-num">1</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsOwnershipTitle">Ownership of Created Content</div>
+              <p data-i18n="help.termsOwnership">All images and content created using Bacon Pixel Editor are the exclusive property of the user who created them. The Service claims no rights over user-created content.</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">2</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsUsageTitle">Usage</div>
+              <p data-i18n="help.termsUsage">The Service may be used free of charge for both personal and commercial purposes.</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">3</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsDisclaimerTitle">Disclaimer</div>
+              <p data-i18n="help.termsDisclaimer">The Service is provided "as is" without any warranty. The operator is not liable for any damages arising from use of the Service.</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">4</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsChangeTitle">Changes to Terms</div>
+              <p data-i18n="help.termsChange">These terms may be updated without prior notice. Continued use of the Service constitutes acceptance of the revised terms.</p>
+            </div>
+          </div>
+        </div>
+        <div class="terms-lang-block" data-lang="zh">
+          <div class="terms-item">
+            <div class="terms-num">1</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsOwnershipTitle">创作内容的权利</div>
+              <p data-i18n="help.termsOwnership">使用 Bacon Pixel Editor 创作的所有图像和内容的版权均归创作者（用户）所有。本服务不主张任何权利。</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">2</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsUsageTitle">使用条件</div>
+              <p data-i18n="help.termsUsage">本服务可免费用于个人或商业目的。</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">3</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsDisclaimerTitle">免责声明</div>
+              <p data-i18n="help.termsDisclaimer">本服务按"现状"提供，不提供任何形式的保证。因使用本服务而产生的任何损失，运营者概不负责。</p>
+            </div>
+          </div>
+          <div class="terms-item">
+            <div class="terms-num">4</div>
+            <div>
+              <div class="terms-heading" data-i18n="help.termsChangeTitle">条款变更</div>
+              <p data-i18n="help.termsChange">本条款可能在不预先通知的情况下更新。继续使用本服务即表示接受修订后的条款。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button id="terms-close" data-i18n="help.close">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Privacy Policy Modal -->
   <div id="privacy-modal-overlay" class="hidden">
     <div id="privacy-modal-box" class="help-modal-box">
       <h2 data-i18n="help.privTitle">Privacy Policy</h2>
       <div id="privacy-content">
-        <div class="priv-lang-section">
-          <h3>日本語</h3>
-          <p>本サービス「Bacon Pixel Editor」（以下「当サービス」）は、ユーザーのプライバシーを尊重します。</p>
+        <div class="priv-lang-block" data-lang="ja">
           <h4>収集する情報</h4>
           <p>当サービスはサーバーへの通信を行いません。作業データはブラウザの <code>localStorage</code> にのみ保存され、外部に送信されることはありません。氏名・メールアドレス等の個人情報は収集しません。</p>
           <h4>広告について (Google AdSense)</h4>
@@ -509,26 +610,30 @@
           <h4>アクセス解析</h4>
           <p>Google Analytics を使用してアクセス状況を解析する場合があります。取得される情報は匿名であり、個人を特定するものではありません。</p>
           <h4>お問い合わせ</h4>
-          <p>運営者：iroiro</p>
-          <p>X (Twitter)：<a href="https://x.com/iroiro_GameDev" target="_blank" rel="noopener">@iroiro_GameDev</a></p>
-          <p>メール：<a href="mailto:tadayohu@gmail.com">tadayohu@gmail.com</a></p>
-          <p class="priv-date">制定日：2026年2月</p>
+          <p>運営者：iroiro ／ X: <a href="https://x.com/iroiro_GameDev" target="_blank" rel="noopener">@iroiro_GameDev</a> ／ <a href="mailto:tadayohu@gmail.com">tadayohu@gmail.com</a></p>
+          <p class="priv-date">制定日：2026年2月 ／ <a href="https://baconpixeleditor.com/privacy-policy.html" target="_blank" rel="noopener">全文はこちら</a></p>
         </div>
-        <hr class="priv-hr">
-        <div class="priv-lang-section">
-          <h3>English</h3>
-          <p>Bacon Pixel Editor ("the Service") respects your privacy.</p>
+        <div class="priv-lang-block" data-lang="en">
           <h4>Information We Collect</h4>
-          <p>The Service does not communicate with any server. Your work is saved only in your browser's <code>localStorage</code> and is never transmitted externally. We do not collect personal information such as names or email addresses.</p>
+          <p>The Service does not communicate with any server. Your work is saved only in your browser's <code>localStorage</code> and is never transmitted externally. We do not collect personal information.</p>
           <h4>Advertising (Google AdSense)</h4>
           <p>The Service may display ads via Google AdSense. Google may use cookies to serve ads based on your interests. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>.</p>
           <h4>Analytics</h4>
-          <p>Google Analytics may be used to analyze access statistics. All data collected is anonymous and cannot identify individuals.</p>
+          <p>Google Analytics may be used to analyze access statistics. All data is anonymous.</p>
           <h4>Contact</h4>
-          <p>Operator: iroiro</p>
-          <p>X (Twitter): <a href="https://x.com/iroiro_GameDev" target="_blank" rel="noopener">@iroiro_GameDev</a></p>
-          <p>Email: <a href="mailto:tadayohu@gmail.com">tadayohu@gmail.com</a></p>
-          <p class="priv-date">Effective: February 2026</p>
+          <p>Operator: iroiro ／ X: <a href="https://x.com/iroiro_GameDev" target="_blank" rel="noopener">@iroiro_GameDev</a> ／ <a href="mailto:tadayohu@gmail.com">tadayohu@gmail.com</a></p>
+          <p class="priv-date">Effective: February 2026 ／ <a href="https://baconpixeleditor.com/privacy-policy.html" target="_blank" rel="noopener">Full policy</a></p>
+        </div>
+        <div class="priv-lang-block" data-lang="zh">
+          <h4>收集的信息</h4>
+          <p>本服务不与任何服务器通信。用户数据仅保存在浏览器的 <code>localStorage</code> 中，不会向外部发送。本服务不收集任何个人信息。</p>
+          <h4>广告（Google AdSense）</h4>
+          <p>本服务可能通过 Google AdSense 展示广告。Google 可能使用 Cookie 投放个性化广告。如需停用，请访问 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google 广告设置</a>。</p>
+          <h4>访问分析</h4>
+          <p>本服务可能使用 Google Analytics 分析访问情况。所有数据均为匿名。</p>
+          <h4>联系方式</h4>
+          <p>运营者：iroiro ／ X: <a href="https://x.com/iroiro_GameDev" target="_blank" rel="noopener">@iroiro_GameDev</a> ／ <a href="mailto:tadayohu@gmail.com">tadayohu@gmail.com</a></p>
+          <p class="priv-date">制定：2026年2月 ／ <a href="https://baconpixeleditor.com/privacy-policy.html" target="_blank" rel="noopener">完整内容</a></p>
         </div>
       </div>
       <div class="modal-buttons">

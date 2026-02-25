@@ -94,6 +94,7 @@ export default {
       case 'zoom-out':this._zoom(-1);break;
       case 'zoom-fit':this._fitZoom();this._render();break;
       case 'tutorial':  this._showTutorialModal(); break;
+      case 'terms':     this._showTermsModal();    break;
       case 'privacy':   this._showPrivacyModal();  break;
       case 'show-about':this._showAboutModal();    break;
     }
@@ -207,8 +208,16 @@ export default {
 
   _showTutorialModal(){ document.getElementById('tutorial-modal-overlay').classList.remove('hidden'); },
   _hideTutorialModal(){ document.getElementById('tutorial-modal-overlay').classList.add('hidden'); },
-  _showPrivacyModal(){  document.getElementById('privacy-modal-overlay').classList.remove('hidden'); },
-  _hidePrivacyModal(){  document.getElementById('privacy-modal-overlay').classList.add('hidden'); },
+  _showPrivacyModal(){
+    document.querySelectorAll('#privacy-content .priv-lang-block').forEach(b=>{b.style.display=b.dataset.lang===this.lang?'':'none';});
+    document.getElementById('privacy-modal-overlay').classList.remove('hidden');
+  },
+  _hidePrivacyModal(){ document.getElementById('privacy-modal-overlay').classList.add('hidden'); },
+  _showTermsModal(){
+    document.querySelectorAll('#terms-content .terms-lang-block').forEach(b=>{b.style.display=b.dataset.lang===this.lang?'':'none';});
+    document.getElementById('terms-modal-overlay').classList.remove('hidden');
+  },
+  _hideTermsModal(){ document.getElementById('terms-modal-overlay').classList.add('hidden'); },
   _showAboutModal(){    document.getElementById('about-modal-overlay').classList.remove('hidden'); },
   _hideAboutModal(){    document.getElementById('about-modal-overlay').classList.add('hidden'); },
 
