@@ -218,6 +218,14 @@ export default {
     });
     document.getElementById('resize-cancel').addEventListener('click',()=>this._hideResizeModal());
     document.getElementById('resize-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('resize-modal-overlay'))this._hideResizeModal();});
+
+    // Help modals (Tutorial / Privacy / About)
+    document.getElementById('tutorial-close').addEventListener('click',()=>this._hideTutorialModal());
+    document.getElementById('tutorial-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('tutorial-modal-overlay'))this._hideTutorialModal();});
+    document.getElementById('privacy-close').addEventListener('click',()=>this._hidePrivacyModal());
+    document.getElementById('privacy-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('privacy-modal-overlay'))this._hidePrivacyModal();});
+    document.getElementById('about-close').addEventListener('click',()=>this._hideAboutModal());
+    document.getElementById('about-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('about-modal-overlay'))this._hideAboutModal();});
   },
 
   _bindResizerEvents(){

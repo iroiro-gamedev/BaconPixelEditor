@@ -89,6 +89,14 @@
             <button data-action="zoom-fit" data-i18n="m.zfit">Fit to Screen (0)</button>
           </div>
         </div>
+        <div class="menu-item">
+          <span class="menu-btn" data-i18n="m.help">Help</span>
+          <div class="menu-dropdown">
+            <button data-action="tutorial"   data-i18n="m.tutorial">Tutorial</button>
+            <button data-action="privacy"    data-i18n="m.privacy">Privacy Policy</button>
+            <button data-action="show-about" data-i18n="m.about">About</button>
+          </div>
+        </div>
       </nav>
       <div id="header-right">
         <button id="theme-toggle" title="Switch theme">Dark</button>
@@ -443,6 +451,110 @@
       <div class="modal-buttons">
         <button id="resize-ok" data-i18n="modal.resizeOk">Resize</button>
         <button id="resize-cancel" data-i18n="modal.cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial Modal -->
+  <div id="tutorial-modal-overlay" class="hidden">
+    <div id="tutorial-modal-box" class="help-modal-box">
+      <h2 data-i18n="help.tutTitle">Tutorial</h2>
+      <div id="tutorial-content">
+        <div class="help-section-title" data-i18n="help.tutTools">Tools</div>
+        <table class="tut-table">
+          <tr><td class="tut-key">P</td><td data-i18n="tool.pencil">Pencil</td><td class="tut-desc" data-i18n="help.tutPencil">Draw pixels. Brush size: −/+ buttons.</td></tr>
+          <tr><td class="tut-key">E</td><td data-i18n="tool.eraser">Eraser</td><td class="tut-desc" data-i18n="help.tutEraser">Erase pixels to transparent.</td></tr>
+          <tr><td class="tut-key">F</td><td data-i18n="tool.fill">Fill</td><td class="tut-desc" data-i18n="help.tutFill">Flood fill. Toggle Contiguous/All.</td></tr>
+          <tr><td class="tut-key">I</td><td data-i18n="tool.eyedropper">Eyedropper</td><td class="tut-desc" data-i18n="help.tutEye">Pick a color from the canvas.</td></tr>
+          <tr><td class="tut-key">S</td><td data-i18n="tool.select">Select</td><td class="tut-desc" data-i18n="help.tutSel">Drag to select. Shift=add, Ctrl=subtract.</td></tr>
+          <tr><td class="tut-key">L</td><td data-i18n="tool.line">Line</td><td class="tut-desc" data-i18n="help.tutLine">Draw a straight line.</td></tr>
+          <tr><td class="tut-key">R</td><td data-i18n="tool.rect">Rectangle</td><td class="tut-desc" data-i18n="help.tutRect">Draw a rectangle.</td></tr>
+          <tr><td class="tut-key">O</td><td data-i18n="tool.ellipse">Ellipse</td><td class="tut-desc" data-i18n="help.tutEllipse">Draw an ellipse.</td></tr>
+        </table>
+        <div class="help-section-title" data-i18n="help.tutShortcuts">Keyboard Shortcuts</div>
+        <table class="tut-table">
+          <tr><td class="tut-key">Ctrl+Z</td><td data-i18n="help.tutUndo">Undo</td><td class="tut-key">Ctrl+Y</td><td data-i18n="help.tutRedo">Redo</td></tr>
+          <tr><td class="tut-key">Ctrl+C</td><td data-i18n="help.tutCopy">Copy</td><td class="tut-key">Ctrl+V</td><td data-i18n="help.tutPaste">Paste</td></tr>
+          <tr><td class="tut-key">Ctrl+A</td><td data-i18n="help.tutSelAll">Select All</td><td class="tut-key">Esc</td><td data-i18n="help.tutDesel">Deselect</td></tr>
+          <tr><td class="tut-key">G</td><td data-i18n="help.tutGrid">Toggle Grid</td><td class="tut-key">0</td><td data-i18n="help.tutFit">Fit to Screen</td></tr>
+          <tr><td class="tut-key">Space</td><td data-i18n="help.tutPan">Pan</td><td class="tut-key">Scroll</td><td data-i18n="help.tutZoom">Zoom</td></tr>
+        </table>
+        <div class="help-section-title" data-i18n="help.tutWorkflow">Basic Workflow</div>
+        <ol class="tut-steps">
+          <li data-i18n="help.tutStep1">File → New to create a canvas (8–512 px).</li>
+          <li data-i18n="help.tutStep2">Pick a color from the palette, then draw on the canvas.</li>
+          <li data-i18n="help.tutStep3">Add layers (+L) or frames (+F) for animation.</li>
+          <li data-i18n="help.tutStep4">File → Export as PNG / GIF / Sprite Sheet.</li>
+          <li data-i18n="help.tutStep5">File → Save (.bpe) to save your project.</li>
+        </ol>
+      </div>
+      <div class="modal-buttons">
+        <button id="tutorial-close" data-i18n="help.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Policy Modal -->
+  <div id="privacy-modal-overlay" class="hidden">
+    <div id="privacy-modal-box" class="help-modal-box">
+      <h2 data-i18n="help.privTitle">Privacy Policy</h2>
+      <div id="privacy-content">
+        <div class="priv-lang-section">
+          <h3>日本語</h3>
+          <p>本サービス「Bacon Pixel Editor」（以下「当サービス」）は、ユーザーのプライバシーを尊重します。</p>
+          <h4>収集する情報</h4>
+          <p>当サービスはサーバーへの通信を行いません。作業データはブラウザの <code>localStorage</code> にのみ保存され、外部に送信されることはありません。氏名・メールアドレス等の個人情報は収集しません。</p>
+          <h4>広告について (Google AdSense)</h4>
+          <p>当サービスでは Google AdSense を利用した広告を掲載する場合があります。Google はユーザーのブラウザに Cookie を保存し、ユーザーの興味に応じた広告を表示します。Cookie を無効にするには、<a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google 広告設定</a>をご利用ください。</p>
+          <h4>アクセス解析</h4>
+          <p>Google Analytics を使用してアクセス状況を解析する場合があります。取得される情報は匿名であり、個人を特定するものではありません。</p>
+          <h4>お問い合わせ</h4>
+          <p>運営者：iroiro</p>
+          <p>X (Twitter)：<a href="https://x.com/iroiro_GameDev" target="_blank" rel="noopener">@iroiro_GameDev</a></p>
+          <p>メール：<a href="mailto:tadayohu@gmail.com">tadayohu@gmail.com</a></p>
+          <p class="priv-date">制定日：2026年2月</p>
+        </div>
+        <hr class="priv-hr">
+        <div class="priv-lang-section">
+          <h3>English</h3>
+          <p>Bacon Pixel Editor ("the Service") respects your privacy.</p>
+          <h4>Information We Collect</h4>
+          <p>The Service does not communicate with any server. Your work is saved only in your browser's <code>localStorage</code> and is never transmitted externally. We do not collect personal information such as names or email addresses.</p>
+          <h4>Advertising (Google AdSense)</h4>
+          <p>The Service may display ads via Google AdSense. Google may use cookies to serve ads based on your interests. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>.</p>
+          <h4>Analytics</h4>
+          <p>Google Analytics may be used to analyze access statistics. All data collected is anonymous and cannot identify individuals.</p>
+          <h4>Contact</h4>
+          <p>Operator: iroiro</p>
+          <p>X (Twitter): <a href="https://x.com/iroiro_GameDev" target="_blank" rel="noopener">@iroiro_GameDev</a></p>
+          <p>Email: <a href="mailto:tadayohu@gmail.com">tadayohu@gmail.com</a></p>
+          <p class="priv-date">Effective: February 2026</p>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button id="privacy-close" data-i18n="help.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Modal -->
+  <div id="about-modal-overlay" class="hidden">
+    <div id="about-modal-box" class="help-modal-box">
+      <h2 data-i18n="help.aboutTitle">About BaconPixelEditor</h2>
+      <div id="about-modal-content">
+        <div class="about-modal-logo">🥓</div>
+        <div class="about-modal-name">BaconPixelEditor</div>
+        <div class="about-modal-ver">Ver 0.1.0</div>
+        <div class="about-modal-copy">©2026 iroiro</div>
+        <div class="about-modal-desc" data-i18n="help.aboutDesc">A lightweight, browser-based pixel art editor.</div>
+        <div class="about-modal-links">
+          <a href="https://github.com/iroiro-gamedev/BaconPixelEditor" target="_blank" rel="noopener">GitHub</a>
+          <span class="about-modal-sep">·</span>
+          <a href="privacy-policy.html" target="_blank" rel="noopener" data-i18n="m.privacy">Privacy Policy</a>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button id="about-close" data-i18n="help.close">Close</button>
       </div>
     </div>
   </div>

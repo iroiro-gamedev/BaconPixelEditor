@@ -645,3 +645,58 @@ body {
 .editor-tab.tab-drag-over { border-left: 2px solid var(--accent); }
 
 .hidden { display:none !important; }
+
+/* ===== Help Modals (Tutorial / Privacy / About) ===== */
+#tutorial-modal-overlay, #privacy-modal-overlay, #about-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+}
+#tutorial-modal-overlay.hidden, #privacy-modal-overlay.hidden, #about-modal-overlay.hidden { display: none; }
+
+.help-modal-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.help-modal-box h2 { font-size: 15px; color: var(--text); margin: 0; }
+
+/* Tutorial */
+#tutorial-modal-box { width: min(580px, 94vw); max-height: 88vh; overflow-y: auto; }
+.help-section-title { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 6px; }
+.tut-table { width: 100%; border-collapse: collapse; font-size: 11px; color: var(--text); }
+.tut-table tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+.tut-table td { padding: 4px 6px; vertical-align: middle; }
+.tut-key { font-family: monospace; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; white-space: nowrap; color: var(--accent2); font-size: 11px; text-align: center; width: 1%; }
+.tut-desc { color: var(--dim); font-size: 11px; }
+.tut-steps { margin: 4px 0 0 16px; padding: 0; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 4px; }
+.tut-steps li { line-height: 1.5; }
+
+/* Privacy */
+#privacy-modal-box { width: min(620px, 94vw); }
+#privacy-content { max-height: 60vh; overflow-y: auto; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+#privacy-content h3 { font-size: 13px; color: var(--accent); margin: 6px 0 2px; }
+#privacy-content h4 { font-size: 12px; color: var(--text); margin: 6px 0 2px; }
+#privacy-content p { margin: 0; color: var(--dim); line-height: 1.6; }
+#privacy-content a { color: var(--accent2); }
+#privacy-content code { background: var(--bg3); border-radius: 3px; padding: 1px 4px; font-size: 11px; }
+.priv-hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+.priv-date { font-size: 11px; color: var(--dim); margin-top: 4px; }
+.priv-lang-section { display: flex; flex-direction: column; gap: 4px; }
+
+/* About */
+#about-modal-box { width: min(360px, 90vw); text-align: center; }
+#about-modal-content { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0 8px; }
+.about-modal-logo { font-size: 40px; line-height: 1; }
+.about-modal-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.about-modal-ver  { font-size: 12px; color: var(--dim); }
+.about-modal-copy { font-size: 12px; color: var(--dim); }
+.about-modal-desc { font-size: 12px; color: var(--dim); margin-top: 6px; }
+.about-modal-links { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; }
+.about-modal-links a { color: var(--accent2); text-decoration: none; }
+.about-modal-links a:hover { text-decoration: underline; }
+.about-modal-sep { color: var(--dim); }
