@@ -147,16 +147,37 @@ export default {
     else{for(let x=lx;x<=rx;x++){set(x,ty);set(x,by);}for(let y=ty;y<=by;y++){set(lx,y);set(rx,y);}}
   },
   _shapeEllipse(x0,y0,x1,y1,set){
-    const cx=(x0+x1)/2,cy=(y0+y1)/2,rx=Math.abs(x1-x0)/2,ry=Math.abs(y1-y0)/2;
-    if(rx===0&&ry===0){set(Math.round(cx),Math.round(cy));return;}
-    const draw=(ex,ey)=>{
-      if(this.optFilled){for(let xi=Math.round(cx-ex);xi<=Math.round(cx+ex);xi++){set(xi,Math.round(cy+ey));set(xi,Math.round(cy-ey));}}
-      else{set(Math.round(cx+ex),Math.round(cy+ey));set(Math.round(cx-ex),Math.round(cy+ey));set(Math.round(cx+ex),Math.round(cy-ey));set(Math.round(cx-ex),Math.round(cy-ey));}
-    };
-    let px=0,py=ry,d1=ry*ry-rx*rx*ry+0.25*rx*rx;draw(px,py);
-    while(2*ry*ry*px<2*rx*rx*py){px++;if(d1<0)d1+=2*ry*ry*px+ry*ry;else{py--;d1+=2*ry*ry*px-2*rx*rx*py+ry*ry;}draw(px,py);}
-    let d2=ry*ry*(px+0.5)*(px+0.5)+rx*rx*(py-1)*(py-1)-rx*rx*ry*ry;
-    while(py>=0){py--;if(d2>0)d2+=rx*rx-2*rx*rx*py;else{px++;d2+=2*ry*ry*px-2*rx*rx*py+rx*rx;}draw(px,py);}
+    const lx=Math.min(x0,x1),rx=Math.max(x0,x1);
+    const ty=Math.min(y0,y1),by=Math.max(y0,y1);
+    if(lx===rx&&ty===by){set(lx,ty);return;}
+    // Pixel (px,py) has its center at (px+0.5, py+0.5).
+    // Inscribe the ellipse in the bounding box using pixel-center math.
+    const cx=(lx+rx+1)/2, cy=(ty+by+1)/2;
+    const a=(rx-lx+1)/2,  b=(by-ty+1)/2;
+    if(this.optFilled){
+      for(let y=ty;y<=by;y++){
+        const dy=(y+0.5-cy)/b; if(dy*dy>1)continue;
+        const xOff=a*Math.sqrt(1-dy*dy);
+        for(let x=Math.ceil(cx-xOff-0.5);x<=Math.floor(cx+xOff-0.5);x++)set(x,y);
+      }
+      return;
+    }
+    // Outline: row-scan gives left/right boundary pixels;
+    // column-scan gives top/bottom boundary pixels. Combine to avoid gaps.
+    const seen=new Set();
+    const plot=(x,y)=>{const k=y*65536+x;if(!seen.has(k)){seen.add(k);set(x,y);}};
+    for(let y=ty;y<=by;y++){
+      const dy=(y+0.5-cy)/b; if(dy*dy>1)continue;
+      const xOff=a*Math.sqrt(1-dy*dy);
+      plot(Math.ceil(cx-xOff-0.5),y);
+      plot(Math.floor(cx+xOff-0.5),y);
+    }
+    for(let x=lx;x<=rx;x++){
+      const dx=(x+0.5-cx)/a; if(dx*dx>1)continue;
+      const yOff=b*Math.sqrt(1-dx*dx);
+      plot(x,Math.ceil(cy-yOff-0.5));
+      plot(x,Math.floor(cy+yOff-0.5));
+    }
   },
 
   _bresenham(x0,y0,x1,y1,ci,skipFirst=false){
